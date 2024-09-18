@@ -8,6 +8,7 @@ import service from '@/utils/request'
 // @Success 200 {string} string "{"success":true,"data":{},"msg":"创建成功"}"
 // @Router /Projects/createSystemProject [post]
 export const createSystemProject = (data) => {
+  console.log(data)
   return service({
     url: '/Projects/createSystemProject',
     method: 'post',
@@ -134,5 +135,21 @@ export const PublishArticle = () => {
   return service({
     url: '/Projects/PublishArticle',
     method: 'POST'
+  })
+}
+// SyncTitle 写入标题列表
+// @Tags SystemProject
+// @Summary 写入标题列表
+// @accept application/json
+// @Produce application/json
+// @Param data query ProjectReq.SystemProjectSearch true "成功"
+// @Success 200 {object} response.Response{data=object,msg=string} "成功"
+// @Router /Projects/SyncTitle [PUT]
+export const SyncTitle = (data) => {
+  console.log(data)
+  return service({
+    url: '/Projects/SyncTitle',
+    method: 'PUT',
+    data
   })
 }

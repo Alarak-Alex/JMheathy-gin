@@ -25,5 +25,6 @@ func (s *SystemProjectRouter) InitSystemProjectRouter(Router *gin.RouterGroup, P
 		ProjectsRouterWithoutAuth.GET("getSystemProjectPublic", ProjectsApi.GetSystemProjectPublic)
 		ProjectsRouterWithoutAuth.POST("WriteWord", ProjectsApi.WriteWord)
 		ProjectsRouterWithoutAuth.POST("PublishArticle", ProjectsApi.PublishArticle)
+		ProjectsRouterWithoutAuth.PUT("SyncTitle", ProjectsApi.SyncTitle)
 	}
 }

@@ -1,19 +1,16 @@
 package Project
 
 import (
-	
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
-    "github.com/flipped-aurora/gin-vue-admin/server/model/Project"
-    ProjectReq "github.com/flipped-aurora/gin-vue-admin/server/model/Project/request"
-    "github.com/gin-gonic/gin"
-    "go.uber.org/zap"
-    "github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/Project"
+	ProjectReq "github.com/flipped-aurora/gin-vue-admin/server/model/Project/request"
+	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
+	"github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
-type SystemProjectApi struct {}
-
-
+type SystemProjectApi struct{}
 
 // CreateSystemProject 创建项目
 // @Tags SystemProject
@@ -31,14 +28,14 @@ func (ProjectsApi *SystemProjectApi) CreateSystemProject(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    Projects.CreatedBy = utils.GetUserID(c)
+	Projects.CreatedBy = utils.GetUserID(c)
 	err = ProjectsService.CreateSystemProject(&Projects)
 	if err != nil {
-        global.GVA_LOG.Error("创建失败!", zap.Error(err))
-		response.FailWithMessage("创建失败:" + err.Error(), c)
+		global.GVA_LOG.Error("创建失败!", zap.Error(err))
+		response.FailWithMessage("创建失败:"+err.Error(), c)
 		return
 	}
-    response.OkWithMessage("创建成功", c)
+	response.OkWithMessage("创建成功", c)
 }
 
 // DeleteSystemProject 删除项目
@@ -52,11 +49,11 @@ func (ProjectsApi *SystemProjectApi) CreateSystemProject(c *gin.Context) {
 // @Router /Projects/deleteSystemProject [delete]
 func (ProjectsApi *SystemProjectApi) DeleteSystemProject(c *gin.Context) {
 	ID := c.Query("ID")
-    userID := utils.GetUserID(c)
-	err := ProjectsService.DeleteSystemProject(ID,userID)
+	userID := utils.GetUserID(c)
+	err := ProjectsService.DeleteSystemProject(ID, userID)
 	if err != nil {
-        global.GVA_LOG.Error("删除失败!", zap.Error(err))
-		response.FailWithMessage("删除失败:" + err.Error(), c)
+		global.GVA_LOG.Error("删除失败!", zap.Error(err))
+		response.FailWithMessage("删除失败:"+err.Error(), c)
 		return
 	}
 	response.OkWithMessage("删除成功", c)
@@ -72,11 +69,11 @@ func (ProjectsApi *SystemProjectApi) DeleteSystemProject(c *gin.Context) {
 // @Router /Projects/deleteSystemProjectByIds [delete]
 func (ProjectsApi *SystemProjectApi) DeleteSystemProjectByIds(c *gin.Context) {
 	IDs := c.QueryArray("IDs[]")
-    userID := utils.GetUserID(c)
-	err := ProjectsService.DeleteSystemProjectByIds(IDs,userID)
+	userID := utils.GetUserID(c)
+	err := ProjectsService.DeleteSystemProjectByIds(IDs, userID)
 	if err != nil {
-        global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
-		response.FailWithMessage("批量删除失败:" + err.Error(), c)
+		global.GVA_LOG.Error("批量删除失败!", zap.Error(err))
+		response.FailWithMessage("批量删除失败:"+err.Error(), c)
 		return
 	}
 	response.OkWithMessage("批量删除成功", c)
@@ -98,11 +95,11 @@ func (ProjectsApi *SystemProjectApi) UpdateSystemProject(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
-    Projects.UpdatedBy = utils.GetUserID(c)
+	Projects.UpdatedBy = utils.GetUserID(c)
 	err = ProjectsService.UpdateSystemProject(Projects)
 	if err != nil {
-        global.GVA_LOG.Error("更新失败!", zap.Error(err))
-		response.FailWithMessage("更新失败:" + err.Error(), c)
+		global.GVA_LOG.Error("更新失败!", zap.Error(err))
+		response.FailWithMessage("更新失败:"+err.Error(), c)
 		return
 	}
 	response.OkWithMessage("更新成功", c)
@@ -121,8 +118,8 @@ func (ProjectsApi *SystemProjectApi) FindSystemProject(c *gin.Context) {
 	ID := c.Query("ID")
 	reProjects, err := ProjectsService.GetSystemProject(ID)
 	if err != nil {
-        global.GVA_LOG.Error("查询失败!", zap.Error(err))
-		response.FailWithMessage("查询失败:" + err.Error(), c)
+		global.GVA_LOG.Error("查询失败!", zap.Error(err))
+		response.FailWithMessage("查询失败:"+err.Error(), c)
 		return
 	}
 	response.OkWithData(reProjects, c)
@@ -146,16 +143,16 @@ func (ProjectsApi *SystemProjectApi) GetSystemProjectList(c *gin.Context) {
 	}
 	list, total, err := ProjectsService.GetSystemProjectInfoList(pageInfo)
 	if err != nil {
-	    global.GVA_LOG.Error("获取失败!", zap.Error(err))
-        response.FailWithMessage("获取失败:" + err.Error(), c)
-        return
-    }
-    response.OkWithDetailed(response.PageResult{
-        List:     list,
-        Total:    total,
-        Page:     pageInfo.Page,
-        PageSize: pageInfo.PageSize,
-    }, "获取成功", c)
+		global.GVA_LOG.Error("获取失败!", zap.Error(err))
+		response.FailWithMessage("获取失败:"+err.Error(), c)
+		return
+	}
+	response.OkWithDetailed(response.PageResult{
+		List:     list,
+		Total:    total,
+		Page:     pageInfo.Page,
+		PageSize: pageInfo.PageSize,
+	}, "获取成功", c)
 }
 
 // GetSystemProjectPublic 不需要鉴权的项目接口
@@ -167,13 +164,14 @@ func (ProjectsApi *SystemProjectApi) GetSystemProjectList(c *gin.Context) {
 // @Success 200 {object} response.Response{data=object,msg=string} "获取成功"
 // @Router /Projects/getSystemProjectPublic [get]
 func (ProjectsApi *SystemProjectApi) GetSystemProjectPublic(c *gin.Context) {
-    // 此接口不需要鉴权
-    // 示例为返回了一个固定的消息接口，一般本接口用于C端服务，需要自己实现业务逻辑
-    ProjectsService.GetSystemProjectPublic()
-    response.OkWithDetailed(gin.H{
-       "info": "不需要鉴权的项目接口信息",
-    }, "获取成功", c)
+	// 此接口不需要鉴权
+	// 示例为返回了一个固定的消息接口，一般本接口用于C端服务，需要自己实现业务逻辑
+	ProjectsService.GetSystemProjectPublic()
+	response.OkWithDetailed(gin.H{
+		"info": "不需要鉴权的项目接口信息",
+	}, "获取成功", c)
 }
+
 // WriteWord 写文
 // @Tags SystemProject
 // @Summary 写文
@@ -182,15 +180,15 @@ func (ProjectsApi *SystemProjectApi) GetSystemProjectPublic(c *gin.Context) {
 // @Param data query ProjectReq.SystemProjectSearch true "成功"
 // @Success 200 {object} response.Response{data=object,msg=string} "成功"
 // @Router /Projects/WriteWord [POST]
-func (ProjectsApi *SystemProjectApi)WriteWord(c *gin.Context) {
-    // 请添加自己的业务逻辑
-    err := ProjectsService.WriteWord()
-    if err != nil {
-        global.GVA_LOG.Error("失败!", zap.Error(err))
-   		response.FailWithMessage("失败", c)
-   		return
-   	}
-   	response.OkWithData("返回数据",c)
+func (ProjectsApi *SystemProjectApi) WriteWord(c *gin.Context) {
+	// 请添加自己的业务逻辑
+	err := ProjectsService.WriteWord()
+	if err != nil {
+		global.GVA_LOG.Error("失败!", zap.Error(err))
+		response.FailWithMessage("失败", c)
+		return
+	}
+	response.OkWithData("返回数据", c)
 }
 
 // PublishArticle 发布文章
@@ -201,14 +199,39 @@ func (ProjectsApi *SystemProjectApi)WriteWord(c *gin.Context) {
 // @Param data query ProjectReq.SystemProjectSearch true "成功"
 // @Success 200 {object} response.Response{data=object,msg=string} "成功"
 // @Router /Projects/PublishArticle [POST]
-func (ProjectsApi *SystemProjectApi)PublishArticle(c *gin.Context) {
-    // 请添加自己的业务逻辑
-    err := ProjectsService.PublishArticle()
-    if err != nil {
-        global.GVA_LOG.Error("失败!", zap.Error(err))
-   		response.FailWithMessage("失败", c)
-   		return
-   	}
-   	response.OkWithData("返回数据",c)
+func (ProjectsApi *SystemProjectApi) PublishArticle(c *gin.Context) {
+	// 请添加自己的业务逻辑
+	err := ProjectsService.PublishArticle()
+	if err != nil {
+		global.GVA_LOG.Error("失败!", zap.Error(err))
+		response.FailWithMessage("失败", c)
+		return
+	}
+	response.OkWithData("返回数据", c)
 }
 
+// SyncTitle 写入标题列表
+// @Tags SystemProject
+// @Summary 写入标题列表
+// @accept application/json
+// @Produce application/json
+// @Param data query ProjectReq.SystemProjectSearch true "成功"
+// @Success 200 {object} response.Response{data=object,msg=string} "成功"
+// @Router /Projects/SyncTitle [PUT]
+func (ProjectsApi *SystemProjectApi) SyncTitle(c *gin.Context) {
+	// 请添加自己的业务逻辑
+	var Projects Project.SystemProject
+	err := c.ShouldBindJSON(&Projects)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	Projects.UpdatedBy = utils.GetUserID(c)
+	err = ProjectsService.SyncTitle(Projects)
+	if err != nil {
+		global.GVA_LOG.Error("同步标题失败!", zap.Error(err))
+		response.FailWithMessage("同步标题失败", c)
+		return
+	}
+	response.OkWithData("同步标题成功", c)
+}

@@ -7,7 +7,7 @@ aliyun-oss:
     base-path: yourBasePath
 autocode:
     web: web/src
-    root: D:\WorkSpace\Microsoft\JMheathy\JMheathy-gin
+    root: F:\WorkSpace\VScode\JMheathy-gin
     server: server
     module: github.com/flipped-aurora/gin-vue-admin/server
     ai-path: ""
@@ -154,7 +154,8 @@ pgsql:
     db-name: jmheathy
     username: postgres
     password: 46791325800..Zlh
-    path: 39.106.34.97
+    # path: 39.106.34.97
+    path: localhost
     engine: ""
     log-mode: error
     max-idle-conns: 10
