@@ -123,18 +123,8 @@
 
       <el-form :model="formData" label-position="top" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="用户Cookie:" prop="userCookie">
-          <!-- <SelectFile v-model="formData.userCookie" /> -->
           <el-form-item label="上传Yaml:" prop="titleList">
-            <!-- <el-upload class="upload" :action="`${getBaseUrl()}/fileUploadAndDownload/upload?noSave=1`"
-              :on-change="onChange" :show-file-list="true">
-              <el-button type="primary">点击上传Yaml文件</el-button>
-              <template #tip>
-                <div class="el-upload__tip">
-                  仅支持上传 .yaml 文件
-                </div>
-              </template>
-            </el-upload> -->
-            <UploadYaml v-model="formData.userCookie" />
+            <UploadYaml v-model="formData.userCookie" @update:cookieName="updateCookieName" />
           </el-form-item>
         </el-form-item>
         <el-form-item label="Cookie类型:" prop="cookieType">
@@ -435,14 +425,19 @@ const onDelete = async () => {
 // 行为控制标记（弹窗内部需要增还是改）
 const type = ref('')
 
-// 更新行
+// 更新行时确保 userCookie 是数组
 const updateCookieFunc = async (row) => {
   const res = await findCookie({ ID: row.ID })
-  type.value = 'update'
   if (res.code === 0) {
     formData.value = res.data
+    formData.value.userCookie = Array.isArray(formData.value.userCookie) ? formData.value.userCookie : [formData.value.userCookie]
+    type.value = 'update'
     dialogFormVisible.value = true
   }
+}
+
+const updateCookieName = (fileName) => {
+  formData.value.cookieName = fileName.replace(/\.yaml$/, '')
 }
 
 
@@ -460,28 +455,6 @@ const deleteCookieFunc = async (row) => {
     getTableData()
   }
 }
-
-// 文件选择回调
-const onChange = (file, fileList) => {
-  ReadYaml(file.raw);
-};
-
-// 读取 YAML 文件
-const ReadYaml = (file) => {
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    try {
-      const yamlContent = event.target.result;
-      const jsonObject = jsyaml.load(yamlContent);
-      formData.value.userCookie = JSON.stringify(jsonObject, null, 2);
-      console.log(formData.value.userCookie);
-    } catch (error) {
-      console.error('Error in ReadYaml:', error);
-      ElMessage({ type: 'error', message: error.message });
-    }
-  };
-  reader.readAsText(file);
-};
 
 // 弹窗控制标记
 const dialogFormVisible = ref(false)

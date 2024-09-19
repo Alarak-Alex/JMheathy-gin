@@ -16,7 +16,7 @@ import { getBaseUrl } from '@/utils/format'
 import * as jsyaml from 'js-yaml'
 
 defineOptions({
-    name: 'UploadYaml',
+    name: 'UploadPrompt',
 })
 
 const props = defineProps({
@@ -35,7 +35,7 @@ const props = defineProps({
 })
 
 const fileList = ref([])
-const emits = defineEmits(['update:modelValue', 'update:cookieName', 'on-success', 'on-error'])
+const emits = defineEmits(['update:modelValue', 'on-success', 'on-error'])
 
 const onChange = (file) => {
     const reader = new FileReader()
@@ -45,7 +45,6 @@ const onChange = (file) => {
             const jsonObject = jsyaml.load(yamlContent)
             const jsonString = JSON.stringify(jsonObject, null, 2)
             emits('update:modelValue', [jsonString])  // 将 jsonString 包装成数组传递
-            emits('update:cookieName', file.name)  // 传递文件名
             emits('on-success', jsonString)
         } catch (error) {
             console.error('Error in ReadYaml:', error)
