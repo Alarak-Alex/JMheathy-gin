@@ -28,9 +28,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="提示词ID" prop="promtId">
-
           <el-input v-model.number="searchInfo.promtId" placeholder="搜索条件" />
-
         </el-form-item>
         <el-form-item label="cookie类型" prop="cookieType">
           <el-select v-model="searchInfo.cookieType" clearable placeholder="请选择"
@@ -39,9 +37,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="管理用户ID" prop="systemUserId">
-
           <el-input v-model.number="searchInfo.systemUserId" placeholder="搜索条件" />
-
         </el-form-item>
 
         <template v-if="showAllQuery">
@@ -166,20 +162,36 @@
       </el-descriptions>
     </el-drawer>
 
-    <el-drawer destroy-on-close size="500" v-model="syncTitleDialogVisible" :show-close="true" :before-close="closesyncTitleDialog">
-    <template #header>
-      <span class="text-lg">同步标题</span>
-    </template>
-    <el-form :model="formData" label-position="top" ref="syncTitleFormRef" label-width="80px">
-      <el-form-item label="标题列表:" prop="titleList">
-        <ArrayCtrl v-model="formData.titleList" editable />
-      </el-form-item>
-      <el-form-item>
-        <el-button type="primary" @click="enterSyncTitleDialog">确 定</el-button>
-        <el-button @click="closesyncTitleDialog">取 消</el-button>
-      </el-form-item>
-    </el-form>
-  </el-drawer>
+    <el-drawer destroy-on-close size="500" v-model="syncTitleDialogVisible" :show-close="true"
+      :before-close="closesyncTitleDialog">
+      <template #header>
+        <span class="text-lg">同步标题</span>
+      </template>
+      <el-form :model="formData" label-position="top" ref="syncTitleFormRef" label-width="80px">
+        <el-form-item label="标题列表:" prop="titleList">
+          <ArrayCtrl v-model="formData.titleList" editable />
+        </el-form-item>
+        <el-form-item label="上传Excel:" prop="titleList">
+          <el-upload class="upload" 
+            :action="`${getBaseUrl()}/fileUploadAndDownload/upload?noSave=1`"
+            :on-change="onChange" 
+            :show-file-list="true"
+            >
+            <el-button type="primary">点击上传Excel文件</el-button>
+            <template #tip>
+              <div class="el-upload__tip">
+                仅支持上传 .xlsx 文件
+              </div>
+            </template>
+          </el-upload>
+        </el-form-item>
+        <el-form-item>
+          <el-button @click="SyncSyncTitleDialog">同 步</el-button>
+          <el-button type="primary" @click="enterSyncTitleDialog">确 定</el-button>
+          <el-button @click="closesyncTitleDialog">取 消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-drawer>
 
   </div>
 </template>
@@ -196,11 +208,14 @@ import {
 } from '@/api/Project/sysProject'
 // 数组控制组件
 import ArrayCtrl from '@/components/arrayCtrl/arrayCtrl.vue'
+// Excel解析组件
+import * as XLSX from 'xlsx';
 
-// 全量引入格式化工具 请按需保留
-import { getDictFunc, formatDate, formatBoolean, filterDict, filterDataSource, returnArrImg, onDownloadFile } from '@/utils/format'
+// 全量引入格式化工具，请按需保留
+import { getDictFunc, formatDate, filterDict } from '@/utils/format'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
+import { getBaseUrl } from '@/utils/format'
 // 引入按钮权限标识
 import { useBtnAuth } from '@/utils/btnAuth'
 
@@ -210,7 +225,6 @@ import ExportExcel from '@/components/exportExcel/exportExcel.vue'
 import ImportExcel from '@/components/exportExcel/importExcel.vue'
 // 导出模板组件
 import ExportTemplate from '@/components/exportExcel/exportTemplate.vue'
-
 
 defineOptions({
   name: 'SystemProject'
@@ -232,18 +246,8 @@ const formData = ref({
   systemUserId: undefined,
 })
 
-
-
-
-
 // 验证规则
 const rule = reactive({
-  //  titleList : [{
-  //      required: true,
-  //      message: '',
-  //      trigger: ['input','blur'],
-  //  },
-  // ],
   picType: [{
     required: true,
     message: '',
@@ -259,8 +263,7 @@ const rule = reactive({
     required: true,
     message: '',
     trigger: ['input', 'blur'],
-  },
-  ],
+  }],
   cookieType: [{
     required: true,
     message: '',
@@ -270,14 +273,12 @@ const rule = reactive({
     whitespace: true,
     message: '不能只输入空格',
     trigger: ['input', 'blur'],
-  }
-  ],
+  }],
   systemUserId: [{
     required: true,
     message: '',
     trigger: ['input', 'blur'],
-  },
-  ],
+  }],
 })
 
 const searchRule = reactive({
@@ -301,6 +302,7 @@ const searchRule = reactive({
 const elFormRef = ref()
 const elSearchFormRef = ref()
 const syncTitleFormRef = ref();
+const tempTitleList = ref([]); // 临时变量用于存储 Excel 中的标题列表
 
 // =========== 表格控制部分 ===========
 const page = ref(1)
@@ -380,7 +382,6 @@ const setOptions = async () => {
 // 获取需要的字典 可能为空 按需保留
 setOptions()
 
-
 // 多选数据
 const multipleSelection = ref([])
 // 多选
@@ -445,7 +446,6 @@ const updateSystemProjectFunc = async (row) => {
   }
 }
 
-
 // 删除行
 const deleteSystemProjectFunc = async (row) => {
   const res = await deleteSystemProject({ ID: row.ID })
@@ -477,27 +477,100 @@ const closesyncTitleDialog = () => {
   syncTitleDialogVisible.value = false
 }
 
+
+// 文件选择回调
+const onChange = (file, _) => {
+  ReadExcel(file)
+}
+
+// 读取 Excel 文件
+const ReadExcel = (file) => {
+  console.log(file)
+  try {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const data = new Uint8Array(event.target.result);
+      const workbook = XLSX.read(data, { type: 'array' });
+      // 这里可以进一步处理工作簿，例如获取工作表等
+      const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+      const titleList = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+      // 处理文件中的标题列表
+      tempTitleList.value = titleList; // 将读取到的标题列表存储到tempTitleList
+      console.log(titleList);
+    };
+    reader.readAsArrayBuffer(file.raw); // 使用readAsArrayBuffer
+  } catch (error) {
+    console.error('Error in ReadExcel:', error);
+    ElMessage({ type: 'error', message: error.message });
+  }
+};
+
+
+
+
+// 同步弹窗同步
+const SyncSyncTitleDialog = async () => {
+
+  try {
+    const valid = await syncTitleFormRef.value?.validate(); // 直接获取表单验证结果
+    if (!valid) throw new Error('表单验证未通过');
+
+    // 将读取到的标题列表赋值给 formData.titleList
+    formData.value.titleList = tempTitleList.value;
+
+    // 进行同步操作
+    const res = await SyncTitle(formData.value);
+    if (res.code !== 0) {
+      throw new Error(res.msg || '同步失败');
+    }
+
+    ElMessage({ type: 'success', message: '同步成功' });
+
+  } catch (error) {
+    console.error('Error in SyncSyncTitleDialog:', error); // 捕获错误
+    ElMessage({ type: 'error', message: error.message });
+  } finally {
+    getTableData(); // 确保无论成功与否都调用获取数据
+    formData.value = {
+    titleList: [],
+    picType: '',
+    promtId: undefined,
+    cookieType: '',
+    systemUserId: undefined,
+  }
+  }
+};
+
 // 同步弹窗确定
 const enterSyncTitleDialog = async () => {
-  console.log('Entering enterSyncTitleDialog'); // 调试信息
+
   try {
-    await syncTitleFormRef.value?.validate(async (valid) => {
-      if (!valid) throw new Error('表单验证未通过');
-      const res = await SyncTitle(formData.value);
-      if (res.code === 0) {
-        ElMessage({ type: 'success', message: '同步成功' });
-        closesyncTitleDialog();
-      } else {
-        throw new Error(res.msg || '同步失败');
-      }
-    });
+    const valid = await syncTitleFormRef.value?.validate(); // 直接获取表单验证结果
+    if (!valid) throw new Error('表单验证未通过');
+
+    const res = await SyncTitle(formData.value);
+    if (res.code !== 0) {
+      throw new Error(res.msg || '写入成功');
+    }
+
+    ElMessage({ type: 'success', message: '写入成功' });
+    closesyncTitleDialog();
+
   } catch (error) {
     console.error('Error in enterSyncTitleDialog:', error); // 捕获错误
     ElMessage({ type: 'error', message: error.message });
+  } finally {
+    getTableData();
+    formData.value = {
+    titleList: [],
+    picType: '',
+    promtId: undefined,
+    cookieType: '',
+    systemUserId: undefined,
   }
-}
-
-
+  }
+  
+};
 
 // 弹窗控制标记
 const dialogFormVisible = ref(false)
@@ -546,22 +619,16 @@ const enterDialog = async () => {
   })
 }
 
-
 const detailFrom = ref({})
-
-// 查看详情控制标记
 const detailShow = ref(false)
-
 
 // 打开详情弹窗
 const openDetailShow = () => {
   detailShow.value = true
 }
 
-
 // 打开详情
 const getDetails = async (row) => {
-  // 打开弹窗
   const res = await findSystemProject({ ID: row.ID })
   if (res.code === 0) {
     detailFrom.value = res.data
@@ -569,14 +636,11 @@ const getDetails = async (row) => {
   }
 }
 
-
 // 关闭详情弹窗
 const closeDetailShow = () => {
   detailShow.value = false
   detailFrom.value = {}
 }
-
-
 </script>
 
 <style></style>

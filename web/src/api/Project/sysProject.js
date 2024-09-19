@@ -146,7 +146,6 @@ export const PublishArticle = () => {
 // @Success 200 {object} response.Response{data=object,msg=string} "成功"
 // @Router /Projects/SyncTitle [PUT]
 export const SyncTitle = (data) => {
-  console.log(data)
   return service({
     url: '/Projects/SyncTitle',
     method: 'PUT',

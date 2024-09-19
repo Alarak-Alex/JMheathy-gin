@@ -3,8 +3,6 @@ package Project
 import (
 	"fmt"
 
-	"encoding/json"
-
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/Project"
 	ProjectReq "github.com/flipped-aurora/gin-vue-admin/server/model/Project/request"
@@ -141,12 +139,6 @@ func (ProjectsService *SystemProjectService) PublishArticle() (err error) {
 // // Author [yourname](https://github.com/yourname)
 func (ProjectsService *SystemProjectService) SyncTitle(Projects Project.SystemProject) (err error) {
 	// 请在这里实现自己的业务逻辑
-	titles := []string{"title1", "title2", "title3"}
-	jsonTitle, err := json.Marshal(titles)
-	if err != nil {
-		return err
-	}
-	Projects.TitleList = jsonTitle
 	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", Projects.ID).Updates(&Projects).Error
 	return err
 }
