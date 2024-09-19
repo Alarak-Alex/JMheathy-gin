@@ -25,6 +25,7 @@
         "gin-vue-admin": "file:",
         "highlight.js": "^11.10.0",
         "js-cookie": "^3.0.5",
+        "js-yaml": "^4.1.0",
         "marked": "14.1.1",
         "marked-highlight": "^2.1.4",
         "mitt": "^3.0.1",

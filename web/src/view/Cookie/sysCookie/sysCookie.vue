@@ -21,10 +21,10 @@
             :disabled-date="time => searchInfo.startCreatedAt ? time.getTime() < searchInfo.startCreatedAt.getTime() : false"></el-date-picker>
         </el-form-item>
 
-        <el-form-item label="用户Cookie" prop="userCookie">
+        <!-- <el-form-item label="用户Cookie" prop="userCookie">
           <el-input v-model="searchInfo.userCookie" placeholder="搜索条件" />
 
-        </el-form-item>
+        </el-form-item> -->
         <el-form-item label="Cookie类型" prop="cookieType">
           <el-select v-model="searchInfo.cookieType" clearable placeholder="请选择"
             @clear="() => { searchInfo.cookieType = undefined }">
@@ -71,14 +71,14 @@
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
 
-        <el-table-column label="用户Cookie" prop="userCookie" width="200">
+        <!-- <el-table-column label="用户Cookie" prop="userCookie" width="200">
           <template #default="scope">
             <div class="file-list">
-              <el-tag v-for="file in scope.row.userCookie" :key="file.uid"
-                @click="downloadFile(file.url)">{{ file.name }}</el-tag>
+              <el-tag v-for="file in scope.row.userCookie" :key="file.uid" @click="downloadFile(file.url)">{{ file.name
+                }}</el-tag>
             </div>
           </template>
-        </el-table-column>
+        </el-table-column> -->
         <el-table-column sortable align="left" label="Cookie类型" prop="cookieType" width="120">
           <template #default="scope">
             {{ filterDict(scope.row.cookieType, CookieTypeOptions) }}
@@ -123,7 +123,19 @@
 
       <el-form :model="formData" label-position="top" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="用户Cookie:" prop="userCookie">
-          <SelectFile v-model="formData.userCookie" />
+          <!-- <SelectFile v-model="formData.userCookie" /> -->
+          <el-form-item label="上传Yaml:" prop="titleList">
+            <!-- <el-upload class="upload" :action="`${getBaseUrl()}/fileUploadAndDownload/upload?noSave=1`"
+              :on-change="onChange" :show-file-list="true">
+              <el-button type="primary">点击上传Yaml文件</el-button>
+              <template #tip>
+                <div class="el-upload__tip">
+                  仅支持上传 .yaml 文件
+                </div>
+              </template>
+            </el-upload> -->
+            <UploadYaml v-model="formData.userCookie" />
+          </el-form-item>
         </el-form-item>
         <el-form-item label="Cookie类型:" prop="cookieType">
           <el-select v-model="formData.cookieType" placeholder="请选择Cookie类型" style="width:100%" :clearable="true">
@@ -146,7 +158,7 @@
 
     <el-drawer destroy-on-close size="800" v-model="detailShow" :show-close="true" :before-close="closeDetailShow">
       <el-descriptions :column="1" border>
-        <el-descriptions-item label="用户Cookie">
+        <!-- <el-descriptions-item label="用户Cookie">
           <div class="fileBtn" v-for="(item, index) in detailFrom.userCookie" :key="index">
             <el-button type="primary" text bg @click="onDownloadFile(item.url)">
               <el-icon style="margin-right: 5px">
@@ -155,7 +167,7 @@
               {{ item.name }}
             </el-button>
           </div>
-        </el-descriptions-item>
+        </el-descriptions-item> -->
         <el-descriptions-item label="Cookie类型">
           {{ detailFrom.cookieType }}
         </el-descriptions-item>
@@ -186,6 +198,7 @@ import {
 import { getUrl } from '@/utils/image'
 // 文件选择组件
 import SelectFile from '@/components/selectFile/selectFile.vue'
+import UploadYaml from '@/components/uploadyaml/uploadyaml.vue'
 
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict, filterDataSource, returnArrImg, onDownloadFile } from '@/utils/format'
@@ -193,7 +206,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ref, reactive } from 'vue'
 // 引入按钮权限标识
 import { useBtnAuth } from '@/utils/btnAuth'
-
+import { getBaseUrl } from '@/utils/format'
+import * as jsyaml from 'js-yaml';
 // 导出组件
 import ExportExcel from '@/components/exportExcel/exportExcel.vue'
 // 导入组件
@@ -446,6 +460,28 @@ const deleteCookieFunc = async (row) => {
     getTableData()
   }
 }
+
+// 文件选择回调
+const onChange = (file, fileList) => {
+  ReadYaml(file.raw);
+};
+
+// 读取 YAML 文件
+const ReadYaml = (file) => {
+  const reader = new FileReader();
+  reader.onload = (event) => {
+    try {
+      const yamlContent = event.target.result;
+      const jsonObject = jsyaml.load(yamlContent);
+      formData.value.userCookie = JSON.stringify(jsonObject, null, 2);
+      console.log(formData.value.userCookie);
+    } catch (error) {
+      console.error('Error in ReadYaml:', error);
+      ElMessage({ type: 'error', message: error.message });
+    }
+  };
+  reader.readAsText(file);
+};
 
 // 弹窗控制标记
 const dialogFormVisible = ref(false)
