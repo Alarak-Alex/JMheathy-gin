@@ -172,3 +172,40 @@ func (PicApi *PictureApi) GetPicturePublic(c *gin.Context) {
 		"info": "不需要鉴权的图片接口信息",
 	}, "获取成功", c)
 }
+
+// CreateMorePic 方法介绍
+// @Tags Picture
+// @Summary 方法介绍
+// @accept application/json
+// @Produce application/json
+// @Param data query PictureReq.PictureSearch true "成功"
+// @Success 200 {object} response.Response{data=object,msg=string} "成功"
+// @Router /Pic/CreateMorePic [POST]
+func (PicApi *PictureApi) CreateMorePic(c *gin.Context) {
+	// 请添加自己的业务逻辑
+	var PicList []Picture.Picture
+	err := c.ShouldBindJSON(&PicList)
+	if err != nil {
+		response.FailWithMessage(err.Error(), c)
+		return
+	}
+	for _, Pic := range PicList {
+		Pic.UpLoadUser = utils.GetUserID(c)
+		Pic.CreatedBy = utils.GetUserID(c)
+		err = PicService.CreatePicture(&Pic)
+		if err != nil {
+			global.GVA_LOG.Error("创建失败!", zap.Error(err))
+			response.FailWithMessage("创建失败:"+err.Error(), c)
+			return
+		}
+	}
+	response.OkWithMessage("创建成功", c)
+
+	// err := PicService.CreateMorePic()
+	// if err != nil {
+	// 	global.GVA_LOG.Error("失败!", zap.Error(err))
+	// 	response.FailWithMessage("失败", c)
+	// 	return
+	// }
+	// response.OkWithData("返回数据", c)
+}

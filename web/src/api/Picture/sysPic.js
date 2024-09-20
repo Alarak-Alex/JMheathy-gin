@@ -108,3 +108,17 @@ export const getPicturePublic = () => {
     method: 'get',
   })
 }
+// CreateMorePic 方法介绍
+// @Tags Picture
+// @Summary 方法介绍
+// @accept application/json
+// @Produce application/json
+// @Param data query PictureReq.PictureSearch true "成功"
+// @Success 200 {object} response.Response{data=object,msg=string} "成功"
+// @Router /Pic/CreateMorePic [POST]
+export const CreateMorePic = () => {
+  return service({
+    url: '/Pic/CreateMorePic',
+    method: 'POST'
+  })
+}

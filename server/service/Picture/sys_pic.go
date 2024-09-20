@@ -106,3 +106,11 @@ func (PicService *PictureService) GetPicturePublic() {
 	// 此方法为获取数据源定义的数据
 	// 请自行实现
 }
+
+// CreateMorePic 方法介绍
+// Author [yourname](https://github.com/yourname)
+func (PicService *PictureService) CreateMorePic() (err error) {
+	// 请在这里实现自己的业务逻辑
+	db := global.GVA_DB.Model(&Picture.Picture{})
+	return db.Error
+}
