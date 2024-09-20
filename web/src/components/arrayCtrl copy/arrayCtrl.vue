@@ -1,5 +1,5 @@
 <template>
-  <div class="flex flex-col items-start gap-2">
+  <div class="flex gap-2">
     <el-tag
       v-for="tag in modelValue"
       :key="tag"
@@ -14,7 +14,7 @@
         v-if="inputVisible"
         ref="InputRef"
         v-model="inputValue"
-        class="input-class w-20"
+        class="w-20"
         size="small"
         @keyup.enter="handleInputConfirm"
         @blur="handleInputConfirm"
@@ -27,6 +27,7 @@
 </template>
 
 <script setup>
+
 defineOptions({
   name: 'ArrayCtrl',
 })
@@ -65,31 +66,3 @@ const handleInputConfirm = () => {
   inputValue.value = ''
 }
 </script>
-
-<style scoped>
-.flex {
-  display: flex;
-}
-
-.flex-col {
-  flex-direction: column;
-}
-
-.items-start {
-  align-items: flex-start;
-}
-
-.gap-2 {
-  gap: 0.5rem; /* Adjust the gap size as needed */
-}
-
-.w-20 {
-  width: 5rem; /* Adjust the width as needed */
-}
-
-.input-class .el-input__inner {
-  white-space: normal;
-  word-break: break-word;
-  max-width: 100%; /* Ensure the input does not exceed its container */
-}
-</style>

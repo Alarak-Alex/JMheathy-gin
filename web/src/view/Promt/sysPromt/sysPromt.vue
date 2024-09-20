@@ -59,10 +59,11 @@
 
         <el-table-column label="提示词" prop="promtData" width="200">
           <template #default="scope">
-            <div class="file-list">
-              <el-tag v-for="file in scope.row.promtData" :key="file.uid"
-                @click="downloadFile(file.url)">{{ file.name }}</el-tag>
-            </div>
+            <!-- <div class="file-list">
+              <el-tag v-for="file in scope.row.promtData" :key="file.uid" @click="downloadFile(file.url)">{{ file.name
+                }}</el-tag>
+            </div> -->
+            <ArrayCtrl v-model="scope.row.promtData" />
           </template>
         </el-table-column>
         <el-table-column sortable align="left" label="管理用户ID" prop="systemUserId" width="120" />
@@ -98,7 +99,9 @@
 
       <el-form :model="formData" label-position="top" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="提示词:" prop="promtData">
-          <SelectFile v-model="formData.promtData" />
+          <!-- <SelectFile v-model="formData.promtData" /> -->
+          <!-- <UploadPrompt v-model="formData.promtData" /> -->
+          <ArrayCtrl v-model="formData.promtData" editable />
         </el-form-item>
         <el-form-item label="管理用户ID:" prop="systemUserId">
           <el-input v-model.number="formData.systemUserId" :clearable="true" placeholder="请输入管理用户ID" />
@@ -138,7 +141,8 @@ import {
 } from '@/api/Promt/sysPromt'
 import { getUrl } from '@/utils/image'
 // 文件选择组件
-import SelectFile from '@/components/selectFile/selectFile.vue'
+// import UploadPrompt from '@/components/uploadprompt/uploadprompt.vue'
+import ArrayCtrl from '@/components/arrayCtrl/arrayCtrl.vue'
 
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict, filterDataSource, returnArrImg, onDownloadFile } from '@/utils/format'

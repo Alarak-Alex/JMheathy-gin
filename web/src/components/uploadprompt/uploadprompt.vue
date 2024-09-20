@@ -44,6 +44,8 @@ const onChange = (file) => {
             const yamlContent = event.target.result
             const jsonObject = jsyaml.load(yamlContent)
             const jsonString = JSON.stringify(jsonObject, null, 2)
+            console.log(jsonString)
+            console.log(JSON.parse(jsonString))
             emits('update:modelValue', [jsonString])  // 将 jsonString 包装成数组传递
             emits('on-success', jsonString)
         } catch (error) {
