@@ -99,8 +99,6 @@
 
       <el-form :model="formData" label-position="top" ref="elFormRef" :rules="rule" label-width="80px">
         <el-form-item label="提示词:" prop="promtData">
-          <!-- <SelectFile v-model="formData.promtData" /> -->
-          <!-- <UploadPrompt v-model="formData.promtData" /> -->
           <ArrayCtrl v-model="formData.promtData" editable />
         </el-form-item>
         <el-form-item label="管理用户ID:" prop="systemUserId">
@@ -108,6 +106,7 @@
         </el-form-item>
       </el-form>
     </el-drawer>
+
 
     <el-drawer destroy-on-close size="800" v-model="detailShow" :show-close="true" :before-close="closeDetailShow">
       <el-descriptions :column="1" border>
