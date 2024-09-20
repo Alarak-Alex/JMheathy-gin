@@ -39,12 +39,21 @@
         "name": "Frontend",
         "runtimeExecutable": "npm",
         "runtimeArgs": ["run-script", "serve"]
+      },
+      {
+        "type": "shell",
+        "request": "launch",
+        "name": "Air Backend",
+        "command": "air",
+        "options": {
+          "cwd": "${workspaceFolder:backend}"
+        }
       }
     ],
     "compounds": [
       {
         "name": "Both (Backend & Frontend)",
-        "configurations": ["Backend", "Frontend"],
+        "configurations": ["Air Backend", "Frontend"],
         "stopAll": true
       }
     ]
