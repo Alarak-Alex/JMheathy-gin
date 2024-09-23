@@ -88,6 +88,9 @@ func (ProjectsService *SystemProjectService) GetSystemProjectInfoList(info Proje
 	if info.SystemUserId != nil {
 		db = db.Where("system_user_id = ?", info.SystemUserId)
 	}
+	if info.Status != "" {
+		db = db.Where("status = ?", info.Status)
+	}
 	err = db.Count(&total).Error
 	if err != nil {
 		return

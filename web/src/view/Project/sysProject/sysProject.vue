@@ -39,6 +39,12 @@
         <el-form-item label="管理用户ID" prop="systemUserId">
           <el-input v-model.number="searchInfo.systemUserId" placeholder="搜索条件" />
         </el-form-item>
+        <el-form-item label="项目状态" prop="status">
+          <el-select v-model="searchInfo.status" clearable placeholder="请选择"
+            @clear="() => { searchInfo.status = undefined }">
+            <el-option v-for="(item, key) in SystemStatusOptions" :key="key" :label="item.label" :value="item.value" />
+          </el-select>
+        </el-form-item>
 
         <template v-if="showAllQuery">
           <!-- 将需要控制显示状态的查询条件添加到此范围内 -->
@@ -87,6 +93,11 @@
           </template>
         </el-table-column>
         <el-table-column sortable align="left" label="管理用户ID" prop="systemUserId" width="120" />
+        <el-table-column sortable align="left" label="项目状态" prop="status" width="120">
+          <template #default="scope">
+            {{ filterDict(scope.row.status, SystemStatusOptions) }}
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="操作" fixed="right" min-width="240">
           <template #default="scope">
             <el-button v-auth="btnAuth.info" type="primary" link class="table-button"
@@ -159,6 +170,10 @@
         <el-descriptions-item label="管理用户ID">
           {{ detailFrom.systemUserId }}
         </el-descriptions-item>
+        <el-descriptions-item label="项目当前状态">
+          {{ detailFrom.status }}
+        </el-descriptions-item>
+        
       </el-descriptions>
     </el-drawer>
 
@@ -238,12 +253,15 @@ const showAllQuery = ref(false)
 // 自动化生成的字典（可能为空）以及字段
 const PicTypeOptions = ref([])
 const CookieTypeOptions = ref([])
+const SystemStatusOptions = ref([]);
+
 const formData = ref({
   titleList: [],
   picType: '',
   promtId: undefined,
   cookieType: '',
   systemUserId: undefined,
+  status: 0,
 })
 
 // 验证规则
@@ -318,6 +336,7 @@ const sortChange = ({ prop, order }) => {
     promtId: 'promt_id',
     cookieType: 'cookie_type',
     systemUserId: 'system_user_id',
+    status:'status',
   }
 
   let sort = sortMap[prop]
@@ -377,6 +396,8 @@ getTableData()
 const setOptions = async () => {
   PicTypeOptions.value = await getDictFunc('PicType')
   CookieTypeOptions.value = await getDictFunc('CookieType')
+  SystemStatusOptions.value = await getDictFunc('SystemStatus')
+
 }
 
 // 获取需要的字典 可能为空 按需保留
@@ -482,6 +503,8 @@ const closesyncTitleDialog = () => {
 const onChange = (file, _) => {
   ReadExcel(file)
 }
+
+
 
 // 读取 Excel 文件
 const ReadExcel = (file) => {
