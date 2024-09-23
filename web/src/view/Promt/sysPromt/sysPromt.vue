@@ -141,7 +141,7 @@ import {
 import { getUrl } from '@/utils/image'
 // 文件选择组件
 // import UploadPrompt from '@/components/uploadprompt/uploadprompt.vue'
-import ArrayCtrl from '@/components/arrayCtrl/arrayCtrl.vue'
+import ArrayCtrl from '@/components/arrayCtrl-latest/arrayCtrl.vue'
 
 // 全量引入格式化工具 请按需保留
 import { getDictFunc, formatDate, formatBoolean, filterDict, filterDataSource, returnArrImg, onDownloadFile } from '@/utils/format'

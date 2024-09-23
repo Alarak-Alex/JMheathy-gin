@@ -48,7 +48,7 @@ import { useRoute, useRouter } from "vue-router"
 import { ElMessage } from 'element-plus'
 import { ref, reactive } from 'vue'
 // 数组控制组件
-import ArrayCtrl from '@/components/arrayCtrl/arrayCtrl.vue'
+import ArrayCtrl from '@/components/arrayCtrl/arrayCtrl2.vue'
 
 
 const route = useRoute()
