@@ -261,7 +261,7 @@ const formData = ref({
   promtId: undefined,
   cookieType: '',
   systemUserId: undefined,
-  status: 0,
+  status: '',
 })
 
 // 验证规则
@@ -295,6 +295,11 @@ const rule = reactive({
   systemUserId: [{
     required: true,
     message: '',
+    trigger: ['input', 'blur'],
+  }],
+  status: [{
+    required: false,
+    message: '状态为必填项',
     trigger: ['input', 'blur'],
   }],
 })
@@ -508,7 +513,6 @@ const onChange = (file, _) => {
 
 // 读取 Excel 文件
 const ReadExcel = (file) => {
-  console.log(file)
   try {
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -519,7 +523,6 @@ const ReadExcel = (file) => {
       const titleList = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
       // 处理文件中的标题列表
       tempTitleList.value = titleList; // 将读取到的标题列表存储到tempTitleList
-      console.log(titleList);
     };
     reader.readAsArrayBuffer(file.raw); // 使用readAsArrayBuffer
   } catch (error) {
@@ -567,31 +570,32 @@ const SyncSyncTitleDialog = async () => {
 // 同步弹窗确定
 const enterSyncTitleDialog = async () => {
 
-  try {
-    const valid = await syncTitleFormRef.value?.validate(); // 直接获取表单验证结果
-    if (!valid) throw new Error('表单验证未通过');
+  // try {
+  //   const valid = await syncTitleFormRef.value?.validate(); // 直接获取表单验证结果
+  //   if (!valid) throw new Error('表单验证未通过');
 
-    const res = await SyncTitle(formData.value);
-    if (res.code !== 0) {
-      throw new Error(res.msg || '写入成功');
-    }
+  //   const res = await SyncTitle(formData.value);
+  //   if (res.code !== 0) {
+  //     throw new Error(res.msg || '写入成功');
+  //   }
 
-    ElMessage({ type: 'success', message: '写入成功' });
+  //   ElMessage({ type: 'success', message: '写入成功' });
     closesyncTitleDialog();
 
-  } catch (error) {
-    console.error('Error in enterSyncTitleDialog:', error); // 捕获错误
-    ElMessage({ type: 'error', message: error.message });
-  } finally {
-    getTableData();
-    formData.value = {
-    titleList: [],
-    picType: '',
-    promtId: undefined,
-    cookieType: '',
-    systemUserId: undefined,
-  }
-  }
+  // } catch (error) {
+  //   console.error('Error in enterSyncTitleDialog:', error); // 捕获错误
+  //   ElMessage({ type: 'error', message: error.message });
+  // } finally {
+  //   getTableData();
+  //   formData.value = {
+  //   titleList: [],
+  //   picType: '',
+  //   promtId: undefined,
+  //   cookieType: '',
+  //   systemUserId: undefined,
+  //   status: '',
+  // }
+  // }
   
 };
 
@@ -613,6 +617,7 @@ const closeDialog = () => {
     promtId: undefined,
     cookieType: '',
     systemUserId: undefined,
+    status: '',
   }
 }
 // 弹窗确定
