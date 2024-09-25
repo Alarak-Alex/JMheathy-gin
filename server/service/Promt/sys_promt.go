@@ -104,11 +104,6 @@ func (pmtService *PromtService) GetPromtInfoList(info PromtReq.PromtSearch) (lis
 		return
 	}
 
-	pd := pmts[0].PromtData
-	var result []string
-	result = ParseJson(pd, result)
-	fmt.Println(result)
-
 	return pmts, total, err
 }
 func (pmtService *PromtService) GetPromtPublic() {

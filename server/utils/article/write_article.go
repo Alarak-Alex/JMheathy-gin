@@ -11,13 +11,19 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 )
 
-func main() {
-	azureOpenAIKey := os.Getenv("AZURE_OPENAI_API_KEY")
-	modelDeploymentID := os.Getenv("YOUR_MODEL_DEPLOYMENT_NAME")
-	maxTokens := int32(400)
+type ModelDeployment struct {
+	AzureOpenAIKey      string
+	AzureOpenAIEndpoint string
+	DeploymentName      string
+}
+
+func WriteWordArticle(AiConfig ModelDeployment) {
+	azureOpenAIKey := AiConfig.AzureOpenAIKey
+	modelDeploymentID := AiConfig.DeploymentName
+	maxTokens := int32(4000)
 
 	// Ex: "https://<your-azure-openai-host>.openai.azure.com"
-	azureOpenAIEndpoint := os.Getenv("AZURE_OPENAI_ENDPOINT")
+	azureOpenAIEndpoint := AiConfig.AzureOpenAIEndpoint
 
 	if azureOpenAIKey == "" || modelDeploymentID == "" || azureOpenAIEndpoint == "" {
 		fmt.Fprintf(os.Stderr, "Skipping example, environment variables missing\n")
