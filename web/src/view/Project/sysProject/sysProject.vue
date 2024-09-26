@@ -108,6 +108,10 @@
               @click="updateSystemProjectFunc(scope.row)">变更</el-button>
             <el-button v-auth="btnAuth.delete" type="primary" link icon="delete"
               @click="deleteRow(scope.row)">删除</el-button>
+            <el-button v-if="scope.row.status === '5'" v-auth="btnAuth.edit" type="primary" link icon="edit"
+              @click="writeRow(scope.row)">写文</el-button>
+            <el-button v-if="scope.row.status === '50'" v-auth="btnAuth.edit" type="primary" link icon="edit"
+              @click="publishRow(scope.row)">发文</el-button>
             <el-button v-auth="btnAuth.edit" type="primary" link icon="flag" class="table-button"
               @click="SyncTitleFunc(scope.row)">同步标题</el-button>
           </template>
@@ -173,7 +177,7 @@
         <el-descriptions-item label="项目当前状态">
           {{ detailFrom.status }}
         </el-descriptions-item>
-        
+
       </el-descriptions>
     </el-drawer>
 
@@ -187,11 +191,8 @@
           <ArrayCtrl v-model="formData.titleList" editable />
         </el-form-item>
         <el-form-item label="上传Excel:" prop="titleList">
-          <el-upload class="upload" 
-            :action="`${getBaseUrl()}/fileUploadAndDownload/upload?noSave=1`"
-            :on-change="onChange" 
-            :show-file-list="true"
-            >
+          <el-upload class="upload" :action="`${getBaseUrl()}/fileUploadAndDownload/upload?noSave=1`"
+            :on-change="onChange" :show-file-list="true">
             <el-button type="primary">点击上传Excel文件</el-button>
             <template #tip>
               <div class="el-upload__tip">
@@ -219,6 +220,8 @@ import {
   updateSystemProject,
   findSystemProject,
   SyncTitle,
+  WriteWord,
+  PublishArticle,
   getSystemProjectList
 } from '@/api/Project/sysProject'
 // 数组控制组件
@@ -341,7 +344,7 @@ const sortChange = ({ prop, order }) => {
     promtId: 'promt_id',
     cookieType: 'cookie_type',
     systemUserId: 'system_user_id',
-    status:'status',
+    status: 'status',
   }
 
   let sort = sortMap[prop]
@@ -426,6 +429,28 @@ const deleteRow = (row) => {
   })
 }
 
+// 写文
+const writeRow = (row) => {
+  ElMessageBox.confirm('确定要写文吗?', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    writeWordFunc(row)
+  })
+}
+
+// 发文
+const publishRow = (row) => {
+  ElMessageBox.confirm('确定要发文吗?', '提示', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning'
+  }).then(() => {
+    PublishArticleFunc(row)
+  })
+}
+
 // 多选删除
 const onDelete = async () => {
   ElMessageBox.confirm('确定要删除吗?', '提示', {
@@ -486,6 +511,31 @@ const deleteSystemProjectFunc = async (row) => {
     getTableData()
   }
 }
+
+const writeWordFunc = async (row) => {
+  const res = await WriteWord({ ID: row.ID })
+  if (res.code === 0) {
+    ElMessage({
+      type: 'success',
+      message: '写文信息发送成功'
+    })
+    getTableData()
+  }
+}
+
+const PublishArticleFunc = async (row) => {
+  const res = await PublishArticle({ ID: row.ID })
+  if (res.code === 0) {
+    ElMessage({
+      type: 'success',
+      message: '发文信息发送成功'
+    })
+    getTableData()
+  }
+  }
+
+
+
 
 // 同步标题弹窗控制标记
 const syncTitleDialogVisible = ref(false)
@@ -558,12 +608,12 @@ const SyncSyncTitleDialog = async () => {
   } finally {
     getTableData(); // 确保无论成功与否都调用获取数据
     formData.value = {
-    titleList: [],
-    picType: '',
-    promtId: undefined,
-    cookieType: '',
-    systemUserId: undefined,
-  }
+      titleList: [],
+      picType: '',
+      promtId: undefined,
+      cookieType: '',
+      systemUserId: undefined,
+    }
   }
 };
 
@@ -580,7 +630,7 @@ const enterSyncTitleDialog = async () => {
   //   }
 
   //   ElMessage({ type: 'success', message: '写入成功' });
-    closesyncTitleDialog();
+  closesyncTitleDialog();
 
   // } catch (error) {
   //   console.error('Error in enterSyncTitleDialog:', error); // 捕获错误
@@ -596,7 +646,7 @@ const enterSyncTitleDialog = async () => {
   //   status: '',
   // }
   // }
-  
+
 };
 
 // 弹窗控制标记

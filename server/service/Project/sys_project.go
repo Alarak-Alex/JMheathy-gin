@@ -124,10 +124,13 @@ func (ProjectsService *SystemProjectService) GetSystemProjectPublic() {
 
 // WriteWord 写文
 // Author [AlarakStark](https://github.com/AlarakStark)
-func (ProjectsService *SystemProjectService) WriteWord() (err error) {
+func (ProjectsService *SystemProjectService) WriteWord(ID string) (err error) {
 	// 请在这里实现自己的业务逻辑
-	db := global.GVA_DB.Model(&Project.SystemProject{})
-	return db.Error
+	var Projects Project.SystemProject
+	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).First(&Projects).Error
+	// PromtId为地址，需要取地址(*Projects.PromtId)
+	fmt.Println(*Projects.PromtId)
+	return err
 }
 
 // PublishArticle 发布文章

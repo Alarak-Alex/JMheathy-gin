@@ -117,10 +117,11 @@ export const getSystemProjectPublic = () => {
 // @Param data query ProjectReq.SystemProjectSearch true "成功"
 // @Success 200 {object} response.Response{data=object,msg=string} "成功"
 // @Router /Projects/WriteWord [POST]
-export const WriteWord = () => {
+export const WriteWord = (params) => {
   return service({
     url: '/Projects/WriteWord',
-    method: 'POST'
+    method: 'POST',
+    params
   })
 }
 // PublishArticle 发布文章
@@ -131,10 +132,11 @@ export const WriteWord = () => {
 // @Param data query ProjectReq.SystemProjectSearch true "成功"
 // @Success 200 {object} response.Response{data=object,msg=string} "成功"
 // @Router /Projects/PublishArticle [POST]
-export const PublishArticle = () => {
+export const PublishArticle = (params) => {
   return service({
     url: '/Projects/PublishArticle',
-    method: 'POST'
+    method: 'POST',
+    params
   })
 }
 // SyncTitle 写入标题列表

@@ -17,7 +17,12 @@ type ModelDeployment struct {
 	DeploymentName      string
 }
 
-func WriteWordArticle(AiConfig ModelDeployment) {
+type Prompt struct {
+	InsidePrompt    string
+	JsonPromptArrry []string
+}
+
+func WriteWordArticle(AiConfig ModelDeployment, prompt Prompt) {
 	azureOpenAIKey := AiConfig.AzureOpenAIKey
 	modelDeploymentID := AiConfig.DeploymentName
 	maxTokens := int32(4000)
@@ -26,7 +31,7 @@ func WriteWordArticle(AiConfig ModelDeployment) {
 	azureOpenAIEndpoint := AiConfig.AzureOpenAIEndpoint
 
 	if azureOpenAIKey == "" || modelDeploymentID == "" || azureOpenAIEndpoint == "" {
-		fmt.Fprintf(os.Stderr, "Skipping example, environment variables missing\n")
+		fmt.Fprintf(os.Stderr, "写文启动失败，请检查配置信息是否正确。\n")
 		return
 	}
 
@@ -45,8 +50,8 @@ func WriteWordArticle(AiConfig ModelDeployment) {
 	// This is a conversation in progress.
 	// NOTE: all messages, regardless of role, count against token usage for this API.
 	messages := []azopenai.ChatRequestMessageClassification{
-		// You set the tone and rules of the conversation with a prompt as the system role.
-		&azopenai.ChatRequestSystemMessage{Content: to.Ptr("You are a helpful assistant.")},
+		// 设置系统内置角色
+		&azopenai.ChatRequestSystemMessage{Content: to.Ptr("你好，欢迎使用 Azure OpenAI 聊天机器人。")},
 
 		// The user asks a question
 		&azopenai.ChatRequestUserMessage{Content: azopenai.NewChatRequestUserMessageContent("Does Azure OpenAI support customer managed keys?")},
