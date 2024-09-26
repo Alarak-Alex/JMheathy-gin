@@ -4,6 +4,16 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"go/parser"
+	"go/printer"
+	"go/token"
+	"io"
+	"io/fs"
+	"mime/multipart"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/system/request"
@@ -13,14 +23,6 @@ import (
 	cp "github.com/otiai10/copy"
 	"github.com/pkg/errors"
 	"go.uber.org/zap"
-	"go/parser"
-	"go/printer"
-	"go/token"
-	"io"
-	"mime/multipart"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 var AutoCodePlugin = new(autoCodePlugin)
@@ -115,7 +117,12 @@ func installation(path string, formPath string, toPath string) error {
 func filterFile(paths []string) []string {
 	np := make([]string, 0, len(paths))
 	for _, path := range paths {
-		if ok, _ := skipMacSpecialDocument(path); ok {
+		srcInfo, err := os.Stat(path) // 获取文件信息
+		if err != nil {
+			// 处理错误，比如可以继续下一个路径
+			continue
+		}
+		if ok, _ := skipMacSpecialDocument(srcInfo, path, ""); ok {
 			continue
 		}
 		np = append(np, path)
@@ -123,7 +130,7 @@ func filterFile(paths []string) []string {
 	return np
 }
 
-func skipMacSpecialDocument(src string) (bool, error) {
+func skipMacSpecialDocument(srcinfo fs.FileInfo, src string, dest string) (bool, error) {
 	if strings.Contains(src, ".DS_Store") || strings.Contains(src, "__MACOSX") {
 		return true, nil
 	}
