@@ -129,16 +129,21 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string) (err error) {
 	var Projects Project.SystemProject
 	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).First(&Projects).Error
 	// PromtId为地址，需要取地址(*Projects.PromtId)
-	fmt.Println(*Projects.PromtId)
+	PromtId := *Projects.PromtId
+	fmt.Println(PromtId)
 	return err
 }
 
 // PublishArticle 发布文章
 // Author [AlarakStark](https://github.com/AlarakStark)
-func (ProjectsService *SystemProjectService) PublishArticle() (err error) {
+func (ProjectsService *SystemProjectService) PublishArticle(ID string) (err error) {
 	// 请在这里实现自己的业务逻辑
-	db := global.GVA_DB.Model(&Project.SystemProject{})
-	return db.Error
+	var Projects Project.SystemProject
+	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).First(&Projects).Error
+	PromtId := *Projects.PromtId
+	CookieType := Projects.CookieType
+	fmt.Println(PromtId, CookieType)
+	return err
 }
 
 // // SyncTitle 写入标题列表

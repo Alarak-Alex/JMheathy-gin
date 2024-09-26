@@ -202,7 +202,8 @@ func (ProjectsApi *SystemProjectApi) WriteWord(c *gin.Context) {
 // @Router /Projects/PublishArticle [POST]
 func (ProjectsApi *SystemProjectApi) PublishArticle(c *gin.Context) {
 	// 请添加自己的业务逻辑
-	err := ProjectsService.PublishArticle()
+	ID := c.Query("ID")
+	err := ProjectsService.PublishArticle(ID)
 	if err != nil {
 		global.GVA_LOG.Error("失败!", zap.Error(err))
 		response.FailWithMessage("失败", c)
