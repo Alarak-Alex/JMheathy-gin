@@ -151,8 +151,15 @@
             <el-option v-for="(item, key) in CookieTypeOptions" :key="key" :label="item.label" :value="item.value" />
           </el-select>
         </el-form-item>
-        <el-form-item label="管理用户ID:" prop="systemUserId">
+        <el-form-item label="管理用户ID:" prop="systemUserId" v-show="false">
           <el-input v-model.number="formData.systemUserId" :clearable="true" placeholder="请输入管理用户ID" />
+        </el-form-item>
+        <!-- 默认值 -->
+
+        <el-form-item label="项目状态:" prop="status" v-show="false">
+          <el-select v-model="formData.status" placeholder="请选择cookie类型" style="width:100%" :clearable="true">
+            <el-option v-for="(item, key) in SystemStatusOptions" :key="key" :label="item.label" :value="item.value" />
+          </el-select>
         </el-form-item>
       </el-form>
     </el-drawer>
@@ -301,8 +308,8 @@ const rule = reactive({
     trigger: ['input', 'blur'],
   }],
   status: [{
-    required: false,
-    message: '状态为必填项',
+    required: true,
+    message: '',
     trigger: ['input', 'blur'],
   }],
 })
@@ -613,6 +620,7 @@ const SyncSyncTitleDialog = async () => {
       promtId: undefined,
       cookieType: '',
       systemUserId: undefined,
+      status: '',
     }
   }
 };
@@ -655,6 +663,14 @@ const dialogFormVisible = ref(false)
 // 打开弹窗
 const openDialog = () => {
   type.value = 'create'
+  formData.value = {
+    titleList: [],
+    picType: '',
+    promtId: undefined,
+    cookieType: '',
+    systemUserId: 0, // 设置为整型的默认值，例如 1
+    status: '5', // 设置为字符型的默认值，例如 'active'
+  }
   dialogFormVisible.value = true
 }
 
