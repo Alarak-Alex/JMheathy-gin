@@ -6,6 +6,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/Project"
 	ProjectReq "github.com/flipped-aurora/gin-vue-admin/server/model/Project/request"
+	Prompt "github.com/flipped-aurora/gin-vue-admin/server/model/Promt"
 	"gorm.io/gorm"
 )
 
@@ -125,11 +126,16 @@ func (ProjectsService *SystemProjectService) GetSystemProjectPublic() {
 // WriteWord 写文
 // Author [AlarakStark](https://github.com/AlarakStark)
 func (ProjectsService *SystemProjectService) WriteWord(ID string) (err error) {
-	// 请在这里实现自己的业务逻辑
+
 	var Projects Project.SystemProject
 	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).First(&Projects).Error
+	if err != nil {
+		return err
+	}
 	// PromtId为地址，需要取地址(*Projects.PromtId)
 	PromtId := *Projects.PromtId
+	var Promp Prompt.Promt
+	err = global.GVA_DB.Model(&Prompt.Promt{}).Where("id = ?", PromtId).First(&Promp).Error
 	fmt.Println(PromtId)
 	return err
 }
@@ -137,7 +143,6 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string) (err error) {
 // PublishArticle 发布文章
 // Author [AlarakStark](https://github.com/AlarakStark)
 func (ProjectsService *SystemProjectService) PublishArticle(ID string) (err error) {
-	// 请在这里实现自己的业务逻辑
 	var Projects Project.SystemProject
 	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).First(&Projects).Error
 	PromtId := *Projects.PromtId
@@ -146,10 +151,9 @@ func (ProjectsService *SystemProjectService) PublishArticle(ID string) (err erro
 	return err
 }
 
-// // SyncTitle 写入标题列表
-// // Author [yourname](https://github.com/yourname)
+// SyncTitle 写入标题列表
+// Author [AlarakStark](https://github.com/AlarakStark)
 func (ProjectsService *SystemProjectService) SyncTitle(Projects Project.SystemProject) (err error) {
-	// 请在这里实现自己的业务逻辑
 	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", Projects.ID).Updates(&Projects).Error
 	return err
 }

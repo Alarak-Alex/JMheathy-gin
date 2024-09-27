@@ -61,7 +61,7 @@ func (pmtService *PromtService) UpdatePromt(pmt Promt.Promt) (err error) {
 // Author [piexlmax](https://github.com/piexlmax)
 func (pmtService *PromtService) GetPromt(ID string) (pmt Promt.Promt, err error) {
 	err = global.GVA_DB.Where("id = ?", ID).First(&pmt).Error
-	return
+	return pmt, err
 }
 
 // GetPromtInfoList 分页获取提示词记录

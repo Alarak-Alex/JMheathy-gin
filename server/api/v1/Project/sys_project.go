@@ -28,6 +28,8 @@ func (ProjectsApi *SystemProjectApi) CreateSystemProject(c *gin.Context) {
 		response.FailWithMessage(err.Error(), c)
 		return
 	}
+	ID := int(utils.GetUserID(c))
+	Projects.SystemUserId = &ID
 	Projects.CreatedBy = utils.GetUserID(c)
 	err = ProjectsService.CreateSystemProject(&Projects)
 	if err != nil {
