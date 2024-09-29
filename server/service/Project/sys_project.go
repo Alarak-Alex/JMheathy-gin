@@ -2,8 +2,13 @@ package Project
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
 
+	"github.com/duke-git/lancet/v2/fileutil"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	Pic "github.com/flipped-aurora/gin-vue-admin/server/model/Picture"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/Project"
 	ProjectReq "github.com/flipped-aurora/gin-vue-admin/server/model/Project/request"
 	Prompt "github.com/flipped-aurora/gin-vue-admin/server/model/Promt"
@@ -134,9 +139,38 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string) (err error) {
 	}
 	// PromtId为地址，需要取地址(*Projects.PromtId)
 	PromtId := *Projects.PromtId
+	PIcType := Projects.PicType
 	var Promp Prompt.Promt
 	err = global.GVA_DB.Model(&Prompt.Promt{}).Where("id = ?", PromtId).First(&Promp).Error
-	fmt.Println(PromtId)
+	if err != nil {
+		fmt.Println("没有找到提示词")
+	}
+	var Pictures []*Pic.Picture
+	err = global.GVA_DB.Model(&Pic.Picture{}).Where("type = ?", PIcType).Find(&Pictures).Error
+	if err != nil {
+		fmt.Println("没有找到图片")
+	}
+	dir, err := os.Getwd()
+	if err != nil {
+		fmt.Println("获取当前工作目录失败:", err)
+		return err
+	}
+
+	var PicList []string
+
+	for _, picture := range Pictures {
+		var PicPath string
+		// 替换字符串
+		PicPath = strings.Replace(picture.Pic, `\`, `/`, 2)
+		PicPath = filepath.Join(dir, PicPath)
+		if !fileutil.IsExist(PicPath) {
+			fmt.Println(PicPath)
+		}
+		picture.Pic = PicPath
+		PicList = append(PicList, PicPath)
+	}
+	fmt.Println(PicList)
+
 	return err
 }
 
