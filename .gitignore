@@ -33,3 +33,7 @@ server/uploads/
 *.iml
 web/.pnpm-debug.log
 web/pnpm-lock.yaml
+
+# docx files
+
+server/UserWord
