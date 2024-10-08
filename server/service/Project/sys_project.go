@@ -12,6 +12,8 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/Project"
 	ProjectReq "github.com/flipped-aurora/gin-vue-admin/server/model/Project/request"
 	Prompt "github.com/flipped-aurora/gin-vue-admin/server/model/Promt"
+	UserUtils "github.com/flipped-aurora/gin-vue-admin/server/utils"
+	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
@@ -130,7 +132,7 @@ func (ProjectsService *SystemProjectService) GetSystemProjectPublic() {
 
 // WriteWord 写文
 // Author [AlarakStark](https://github.com/AlarakStark)
-func (ProjectsService *SystemProjectService) WriteWord(ID string) (err error) {
+func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context) (err error) {
 
 	var Projects Project.SystemProject
 	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).First(&Projects).Error
@@ -138,6 +140,8 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string) (err error) {
 		return err
 	}
 	// PromtId为地址，需要取地址(*Projects.PromtId)
+	absPath := fileutil.CurrentPath()
+	fmt.Println(absPath)
 	PromtId := *Projects.PromtId
 	PIcType := Projects.PicType
 	var Promp Prompt.Promt
@@ -169,7 +173,38 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string) (err error) {
 		picture.Pic = PicPath
 		PicList = append(PicList, PicPath)
 	}
-	fmt.Println(PicList)
+	// os.Mkdir("..\\..\\..\\demo", 0777)
+	UserName := UserUtils.GetUserName(c)
+	fmt.Println(UserName)
+	filepath.Join(dir, UserName)
+	CreatePath := "UserWord/" + UserName
+	if fileutil.IsExist(CreatePath) {
+
+		fmt.Println("文件夹已创建")
+
+	} else {
+
+		err := fileutil.CreateDir(CreatePath)
+		if err != nil {
+			fmt.Println("创建目录失败:", err)
+			return err
+		}
+
+	}
+	Titles, err := UserUtils.JsonArrayToStringSlice(Projects.TitleList)
+	if err != nil {
+		fmt.Println("转换json数组失败:", err)
+		return err
+	}
+	for _, title := range Titles {
+		// 写入标题
+		// fmt.Println(title)
+		part2 := title + "_part2"
+		fileutil.CreateFile(CreatePath + "/" + title + ".docx")
+		fileutil.CreateFile(CreatePath + "/" + part2 + ".docx")
+	}
+	// 打印图片路径（为了调试）
+	// fmt.Println(PicList)
 
 	return err
 }

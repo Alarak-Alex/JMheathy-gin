@@ -185,7 +185,7 @@ func (ProjectsApi *SystemProjectApi) GetSystemProjectPublic(c *gin.Context) {
 func (ProjectsApi *SystemProjectApi) WriteWord(c *gin.Context) {
 	// 请添加自己的业务逻辑
 	ID := c.Query("ID")
-	err := ProjectsService.WriteWord(ID)
+	err := ProjectsService.WriteWord(ID, c)
 	if err != nil {
 		global.GVA_LOG.Error("失败!", zap.Error(err))
 		response.FailWithMessage("失败", c)
