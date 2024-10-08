@@ -11,6 +11,7 @@ require (
 	github.com/aws/aws-sdk-go v1.55.5
 	github.com/casbin/casbin/v2 v2.100.0
 	github.com/casbin/gorm-adapter/v3 v3.28.0
+	github.com/duke-git/lancet v1.4.3
 	github.com/duke-git/lancet/v2 v2.3.2
 	github.com/flipped-aurora/ws v1.0.2
 	github.com/fsnotify/fsnotify v1.7.0
@@ -77,7 +78,6 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dsnet/compress v0.0.1 // indirect
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/flipped-aurora/gin-vue-admin v2.7.4+incompatible // indirect
 	github.com/gabriel-vasile/mimetype v1.4.5 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect
 	github.com/glebarez/go-sqlite v1.22.0 // indirect
