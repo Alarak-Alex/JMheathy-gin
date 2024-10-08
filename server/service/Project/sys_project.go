@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/duke-git/lancet/v2/convertor"
 	"github.com/duke-git/lancet/v2/fileutil"
 	"github.com/duke-git/lancet/v2/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -133,90 +134,84 @@ func (ProjectsService *SystemProjectService) GetSystemProjectPublic() {
 
 // WriteWord 写文
 // Author [AlarakStark](https://github.com/AlarakStark)
-func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context) (err error) {
-
-	var Projects Project.SystemProject
-	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).First(&Projects).Error
-	if err != nil {
+func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context) error {
+	var project Project.SystemProject
+	// 从数据库获取项目
+	if err := global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).First(&project).Error; err != nil {
 		return err
 	}
-	// PromtId为地址，需要取地址(*Projects.PromtId)
-	// absPath := fileutil.CurrentPath()
-	// fmt.Println(absPath)
-	PromtId := *Projects.PromtId
-	PIcType := Projects.PicType
-	var Promp Prompt.Promt
-	err = global.GVA_DB.Model(&Prompt.Promt{}).Where("id = ?", PromtId).First(&Promp).Error
-	if err != nil {
+
+	promptID := *project.PromtId
+	picType := project.PicType
+
+	// 从数据库获取提示词
+	var prompt Prompt.Promt
+	if err := global.GVA_DB.Model(&Prompt.Promt{}).Where("id = ?", promptID).First(&prompt).Error; err != nil {
 		fmt.Println("没有找到提示词")
 	}
-	var Pictures []*Pic.Picture
-	err = global.GVA_DB.Model(&Pic.Picture{}).Where("type = ?", PIcType).Find(&Pictures).Error
-	if err != nil {
+
+	// 从数据库获取图片
+	var pictures []*Pic.Picture
+	if err := global.GVA_DB.Model(&Pic.Picture{}).Where("type = ?", picType).Find(&pictures).Error; err != nil {
 		fmt.Println("没有找到图片")
 	}
+
+	// 获取当前工作目录
 	dir, err := os.Getwd()
 	if err != nil {
-		fmt.Println("获取当前工作目录失败:", err)
-		return err
+		return fmt.Errorf("获取当前工作目录失败: %w", err)
 	}
 
-	var PicList []string
-
-	for _, picture := range Pictures {
-		var PicPath string
-		// 替换字符串
-		PicPath = strings.Replace(picture.Pic, `\`, `/`, 2)
-		PicPath = filepath.Join(dir, PicPath)
-		if !fileutil.IsExist(PicPath) {
-			fmt.Println(PicPath)
+	var picList []string
+	for _, picture := range pictures {
+		picPath := filepath.Join(dir, strings.Replace(picture.Pic, `\`, `/`, 2))
+		if !fileutil.IsExist(picPath) {
+			fmt.Println(picPath)
 		}
-		picture.Pic = PicPath
-		PicList = append(PicList, PicPath)
+		picture.Pic = picPath
+		picList = append(picList, picPath)
 	}
-	// os.Mkdir("..\\..\\..\\demo", 0777)
-	UserName := UserUtils.GetUserName(c)
-	fmt.Println(UserName)
-	filepath.Join(dir, UserName)
-	CreatePath := "UserWord/" + UserName
-	if fileutil.IsExist(CreatePath) {
 
+	// 获取用户名并创建目录
+	userName := UserUtils.GetUserName(c)
+	createPath := filepath.Join("UserWord", userName)
+	if !fileutil.IsExist(createPath) {
+		if err := fileutil.CreateDir(createPath); err != nil {
+			return fmt.Errorf("创建目录失败: %w", err)
+		}
 		fmt.Println("文件夹已创建")
-
-	} else {
-
-		err := fileutil.CreateDir(CreatePath)
-		if err != nil {
-			fmt.Println("创建目录失败:", err)
-			return err
-		}
-
 	}
-	Titles, err := UserUtils.JsonArrayToStringSlice(Projects.TitleList)
+
+	// 转换标题列表
+	titles, err := UserUtils.JsonArrayToStringSlice(project.TitleList)
 	if err != nil {
-		fmt.Println("转换json数组失败:", err)
-		return err
+		return fmt.Errorf("转换json数组失败: %w", err)
 	}
-	// 调试文件生成代码
-	var Part1 []string
-	var Part2 []string
-	for _, title := range Titles {
-		// 写入标题
-		// fmt.Println(title)
-		part1 := title + "_part1.docx"
-		part2 := title + "_part2.docx"
-		Part2 = append(Part2, part2)
-		Part1 = append(Part1, part1)
+
+	for i, title := range titles {
+		// 写入标题的数量
+		titleNum := i + 1
+		num := convertor.ToString(titleNum)
+		fmt.Println("写入第" + num + "个标题," + title)
+		go UserUtils.Chatmain(prompt, title)
 	}
-	// fmt.Println(Part1)
-	// fmt.Println(Part2)
+
+	// 生成文档名称
+	var part1, part2 []string
+	for _, title := range titles {
+		part1 = append(part1, title+"_part1.docx")
+		part2 = append(part2, title+"_part2.docx")
+	}
+
+	// 打印Pandoc版本信息
 	stdout, stderr, err := system.ExecCommand("pandoc --version")
+	if err != nil {
+		return fmt.Errorf("执行命令失败: %w", err)
+	}
 	fmt.Println("std out: ", stdout)
 	fmt.Println("std err: ", stderr)
-	// 打印图片路径（为了调试）
-	// fmt.Println(PicList)
 
-	return err
+	return nil
 }
 
 // PublishArticle 发布文章
