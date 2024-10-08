@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/duke-git/lancet/v2/fileutil"
+	"github.com/duke-git/lancet/v2/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
 	Pic "github.com/flipped-aurora/gin-vue-admin/server/model/Picture"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/Project"
@@ -140,8 +141,8 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 		return err
 	}
 	// PromtId为地址，需要取地址(*Projects.PromtId)
-	absPath := fileutil.CurrentPath()
-	fmt.Println(absPath)
+	// absPath := fileutil.CurrentPath()
+	// fmt.Println(absPath)
 	PromtId := *Projects.PromtId
 	PIcType := Projects.PicType
 	var Promp Prompt.Promt
@@ -196,13 +197,22 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 		fmt.Println("转换json数组失败:", err)
 		return err
 	}
+	// 调试文件生成代码
+	var Part1 []string
+	var Part2 []string
 	for _, title := range Titles {
 		// 写入标题
 		// fmt.Println(title)
-		part2 := title + "_part2"
-		fileutil.CreateFile(CreatePath + "/" + title + ".docx")
-		fileutil.CreateFile(CreatePath + "/" + part2 + ".docx")
+		part1 := title + "_part1.docx"
+		part2 := title + "_part2.docx"
+		Part2 = append(Part2, part2)
+		Part1 = append(Part1, part1)
 	}
+	// fmt.Println(Part1)
+	// fmt.Println(Part2)
+	stdout, stderr, err := system.ExecCommand("pandoc --version")
+	fmt.Println("std out: ", stdout)
+	fmt.Println("std err: ", stderr)
 	// 打印图片路径（为了调试）
 	// fmt.Println(PicList)
 
