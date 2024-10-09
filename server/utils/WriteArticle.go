@@ -7,7 +7,10 @@ import (
 	"os"
 	"strings"
 
+	"github.com/duke-git/lancet/strutil"
+	"github.com/duke-git/lancet/system"
 	"github.com/duke-git/lancet/v2/fileutil"
+	"github.com/duke-git/lancet/v2/slice"
 	Prompt "github.com/flipped-aurora/gin-vue-admin/server/model/Promt"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
@@ -28,7 +31,7 @@ func TestChatMain(Prompt Prompt.Promt, title chan string, filename string) {
 	}
 }
 
-func Chatmain(Prompt Prompt.Promt, title chan string, filename string) {
+func Chatmain(Prompt Prompt.Promt, title chan string, filePath string) {
 	// azureOpenAIKey := os.Getenv("AZURE_OPENAI_API_KEY")
 	// modelDeploymentID := os.Getenv("YOUR_MODEL_DEPLOYMENT_NAME")
 	azureOpenAIKey := "75189fda8719425dbbc5947d59d661e7"
@@ -63,7 +66,7 @@ func Chatmain(Prompt Prompt.Promt, title chan string, filename string) {
 	for {
 		title1, ok := <-title
 		if !ok {
-			fmt.Println("通道已关闭，退出循环")
+			// fmt.Println("通道已关闭，退出循环")
 			break
 		}
 		article := generateArticle(title1, client, modelDeploymentID, maxTokens, prompts)
@@ -72,7 +75,7 @@ func Chatmain(Prompt Prompt.Promt, title chan string, filename string) {
 			articles = append(articles, ReplaceString(arti))
 		}
 		// 保存文章到本地markdown文件
-		saveArticle(filename+"/"+title1, articles)
+		saveArticle(filePath, articles, title1)
 
 	}
 }
@@ -90,7 +93,7 @@ func generateArticle(title string, client *azopenai.Client, modelDeploymentID st
 		} else {
 			part := generatePart(title, client, modelDeploymentID, maxTokens, data, historyMessages)
 			article = append(article, part)
-			fmt.Println("生成的部分为：", part)
+			// fmt.Println("生成的部分为：", part)
 			// 记录生成的部分作为历史消息
 			historyMessages = append(historyMessages, &azopenai.ChatRequestAssistantMessage{Content: to.Ptr(part)})
 		}
@@ -138,27 +141,85 @@ func getCompletion(title string, client *azopenai.Client, modelDeploymentID stri
 	return "", messages
 }
 
-func saveArticle(title string, articles []string) {
+func saveArticle(Path string, articles []string, title string) {
 	// 保存文章到本地markdown文件
-	filename := fmt.Sprintf("%s.md", title)
-	fileutil.CreateFile(filename + "/" + title)
-	f, err := os.Create(filename)
+
+	// 生成文档名称
+	part1 := title + "_part1"
+	part2 := title + "_part2"
+	filepart1 := fmt.Sprintf("%s.md", part1)
+	filepart2 := fmt.Sprintf("%s.md", part2)
+	fileutil.CreateFile(Path + "/" + filepart1)
+	fileutil.CreateFile(Path + "/" + filepart2)
+
+	f1, err := os.OpenFile(Path+"/"+filepart1, os.O_APPEND|os.O_WRONLY, 0600)
 	if err != nil {
-		log.Printf("创建文件时出错: %s", err)
+		log.Printf("错误: %s", err)
 		return
 	}
-	defer f.Close()
+	f2, err := os.OpenFile(Path+"/"+filepart2, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Printf("错误: %s", err)
+		return
+	}
 
-	for _, article := range articles {
-		// _, err = f.WriteString(fmt.Sprintf("%s\n", article))
-		// fmt.Println(article)
+	var cutindex int
 
-		fileutil.WriteStringToFile(filename+"/"+title, article, true)
+	for index, str := range articles {
+		if strutil.ContainsAll(str, []string{"---文章分割线---"}) {
+			cutindex = index + 1
+			break
+		}
+	}
+
+	deleterange := len(articles) - cutindex + 1
+
+	var part1Content []string
+	var part2Content []string
+
+	part1Content = slice.DropRight(articles, deleterange)
+	part2Content = slice.DeleteRange(articles, 0, cutindex)
+	// 写入part1内容
+	for _, part1 := range part1Content {
+		_, err = f1.WriteString(part1 + "\n")
 		if err != nil {
-			log.Printf("写入文件时出错: %s", err)
+			log.Printf("错误: %s", err)
 			return
 		}
 	}
 
-	fmt.Println("文章已成功保存为", filename)
+	// 写入part2内容
+	for _, part2 := range part2Content {
+		_, err = f2.WriteString(part2 + "\n")
+		if err != nil {
+			log.Printf("错误: %s", err)
+			return
+		}
+	}
+
+	f1.Close()
+	f2.Close()
+
+	base1 := Path + "/" + filepart1
+	base2 := Path + "/" + filepart2
+	docx1 := strings.Split(base1, ".")[0] + ".docx"
+	docx2 := strings.Split(base2, ".")[0] + ".docx"
+
+	// 打印Pandoc版本信息
+	command1 := "pandoc " + base1 + " -f markdown -t docx -s -o " + docx1
+	command2 := "pandoc " + base2 + " -f markdown -t docx -s -o " + docx2
+	_, _, err = system.ExecCommand(command1)
+	if err != nil {
+		fmt.Errorf("执行命令失败: %w", err)
+	}
+	// fmt.Println("std out: ", stdout)
+	// fmt.Println("std err: ", stderr)
+	fileutil.RemoveFile(base1)
+	_, _, err = system.ExecCommand(command2)
+	if err != nil {
+		fmt.Errorf("执行命令失败: %w", err)
+	}
+	// fmt.Println("std out: ", stdout, fileutil.CurrentPath())
+	// fmt.Println("std err: ", stderr)
+	fileutil.RemoveFile(base2)
 }

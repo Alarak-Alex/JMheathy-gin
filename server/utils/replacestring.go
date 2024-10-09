@@ -5,7 +5,7 @@ import "github.com/duke-git/lancet/strutil"
 func ReplaceString(s string) string {
 
 	replaces := map[string]string{
-		"**": "***",
+		// "**": "***",
 		"党":  "",
 		"国家": "",
 		"台湾": "",

@@ -5,17 +5,21 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/duke-git/lancet/v2/fileutil"
-	"github.com/duke-git/lancet/v2/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
+	Cookie "github.com/flipped-aurora/gin-vue-admin/server/model/Cookie"
 	Pic "github.com/flipped-aurora/gin-vue-admin/server/model/Picture"
 	"github.com/flipped-aurora/gin-vue-admin/server/model/Project"
 	ProjectReq "github.com/flipped-aurora/gin-vue-admin/server/model/Project/request"
 	Prompt "github.com/flipped-aurora/gin-vue-admin/server/model/Promt"
 	UserUtils "github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -132,8 +136,6 @@ func (ProjectsService *SystemProjectService) GetSystemProjectPublic() {
 	// 请自行实现
 }
 
-// WriteWord 写文
-// Author [AlarakStark](https://github.com/AlarakStark)
 func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context) error {
 	var project Project.SystemProject
 	// 从数据库获取项目
@@ -148,15 +150,16 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 	var prompt Prompt.Promt
 	if err := global.GVA_DB.Model(&Prompt.Promt{}).Where("id = ?", promptID).First(&prompt).Error; err != nil {
 		fmt.Println("没有找到提示词")
+		return err
 	}
 
 	// 从数据库获取图片
 	var pictures []*Pic.Picture
 	if err := global.GVA_DB.Model(&Pic.Picture{}).Where("type = ?", picType).Find(&pictures).Error; err != nil {
 		fmt.Println("没有找到图片")
+		return err
 	}
 
-	// 获取当前工作目录
 	dir, err := os.Getwd()
 	if err != nil {
 		return fmt.Errorf("获取当前工作目录失败: %w", err)
@@ -164,7 +167,7 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 
 	var picList []string
 	for _, picture := range pictures {
-		picPath := filepath.Join(dir, strings.Replace(picture.Pic, `\`, `/`, 2))
+		picPath := filepath.Join(dir, strings.Replace(picture.Pic, `\`, `/`, -1))
 		if !fileutil.IsExist(picPath) {
 			fmt.Println(picPath)
 		}
@@ -172,26 +175,22 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 		picList = append(picList, picPath)
 	}
 
-	// 获取用户名并创建目录
 	userName := UserUtils.GetUserName(c)
-	createPath := filepath.Join("UserWord", userName)
+	createPath := filepath.Join("UserWord", userName, project.PUUID)
 	if !fileutil.IsExist(createPath) {
 		if err := fileutil.CreateDir(createPath); err != nil {
 			return fmt.Errorf("创建目录失败: %w", err)
 		}
-		fmt.Println("文件夹已创建")
 	}
 
-	// 转换标题列表
-	fmt.Println(project.TitleList)
 	titles, err := UserUtils.JsonArrayToStringSlice(project.TitleList)
 	if err != nil {
 		return fmt.Errorf("转换json数组失败: %w", err)
 	}
-	// 初始化通道
-	Titlechan := make(chan string)
 
-	// 发送标题到通道
+	Titlechan := make(chan string)
+	var wg sync.WaitGroup
+
 	go func() {
 		for _, title := range titles {
 			Titlechan <- title
@@ -199,32 +198,26 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 		close(Titlechan)
 	}()
 
-	// CHAN 通道
-	fmt.Println("通道已创建")
-
-	// 根据系统的 CPU 核心数开启多个协程
 	numGoroutines := runtime.NumCPU()
-	maxGoroutines := len(titles) // 可以用 titles 长度作为最大并发数
+	sem := make(chan struct{}, numGoroutines)
 
-	for i := 0; i < numGoroutines && i < maxGoroutines; i++ {
-		fmt.Println("开启协程", i)
-		go UserUtils.Chatmain(prompt, Titlechan, createPath)
-	}
-
-	// 生成文档名称
-	var part1, part2 []string
 	for _, title := range titles {
-		part1 = append(part1, title+"_part1.docx")
-		part2 = append(part2, title+"_part2.docx")
+		sem <- struct{}{} // 占用一个信号量
+		wg.Add(1)
+		go func(title string) {
+			defer wg.Done()
+			defer func() { <-sem }() // 释放信号量
+
+			// 此处写入错误处理
+			UserUtils.Chatmain(prompt, Titlechan, createPath)
+		}(title)
 	}
 
-	// 打印Pandoc版本信息
-	stdout, stderr, err := system.ExecCommand("pandoc --version")
-	if err != nil {
-		return fmt.Errorf("执行命令失败: %w", err)
+	wg.Wait()
+
+	if err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).Update("status", "50").Error; err != nil {
+		global.GVA_LOG.Error("更新状态失败!", zap.Error(err))
 	}
-	fmt.Println("std out: ", stdout)
-	fmt.Println("std err: ", stderr)
 
 	return nil
 }
@@ -233,10 +226,21 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 // Author [AlarakStark](https://github.com/AlarakStark)
 func (ProjectsService *SystemProjectService) PublishArticle(ID string) (err error) {
 	var Projects Project.SystemProject
+	var Cookies []Cookie.Cookie
 	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).First(&Projects).Error
 	PromtId := *Projects.PromtId
 	CookieType := Projects.CookieType
-	fmt.Println(PromtId, CookieType)
+	err = global.GVA_DB.Model(&Cookie.Cookie{}).Where("cookie_type = ?", CookieType).Find(&Cookies).Error
+	for index, cookie := range Cookies {
+		fmt.Println("第" + strconv.Itoa(index) + "个cookie")
+		fmt.Println(cookie.CookieName)
+	}
+	cookiedata := make(chan datatypes.JSON, len(Cookies))
+	for _, cookie := range Cookies {
+		cookiedata <- cookie.UserCookie
+		fmt.Println(PromtId)
+		return err
+	}
 	return err
 }
 

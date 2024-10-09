@@ -19,8 +19,33 @@
       "GONOPROXY": "none;"
     },
     "cSpell.words": [
+      "Alarak",
+      "arti",
+      "azcore",
+      "azopenai",
+      "Chatmain",
+      "cookiedata",
+      "cutindex",
+      "datatypes",
+      "deleterange",
+      "fileutil",
+      "gonic",
+      "GONOPROXY",
+      "GOPROXY",
+      "gorm",
       "jsyaml",
-      "Titlechan"
+      "OPENAI",
+      "origional",
+      "Pandoc",
+      "piexlmax",
+      "pinia",
+      "Projectss",
+      "Promt",
+      "PUUID",
+      "strutil",
+      "swaggertype",
+      "Titlechan",
+      "visiable"
     ]
   },
   "launch": {
