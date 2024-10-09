@@ -228,19 +228,18 @@ func (ProjectsService *SystemProjectService) PublishArticle(ID string) (err erro
 	var Projects Project.SystemProject
 	var Cookies []Cookie.Cookie
 	err = global.GVA_DB.Model(&Project.SystemProject{}).Where("id = ?", ID).First(&Projects).Error
-	PromtId := *Projects.PromtId
 	CookieType := Projects.CookieType
+
 	err = global.GVA_DB.Model(&Cookie.Cookie{}).Where("cookie_type = ?", CookieType).Find(&Cookies).Error
+	cookiestream := make(chan datatypes.JSON, 1000)
 	for index, cookie := range Cookies {
-		fmt.Println("第" + strconv.Itoa(index) + "个cookie")
+		fmt.Println("第" + strconv.Itoa(index+1) + "个cookie")
+		fmt.Println(cookie.UserCookie)
+		cookiestream <- cookie.UserCookie
 		fmt.Println(cookie.CookieName)
 	}
-	cookiedata := make(chan datatypes.JSON, len(Cookies))
-	for _, cookie := range Cookies {
-		cookiedata <- cookie.UserCookie
-		fmt.Println(PromtId)
-		return err
-	}
+	fmt.Println(<-cookiestream)
+
 	return err
 }
 

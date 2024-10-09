@@ -25,6 +25,7 @@
       "azopenai",
       "Chatmain",
       "cookiedata",
+      "cookiestream",
       "cutindex",
       "datatypes",
       "deleterange",
