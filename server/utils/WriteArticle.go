@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/duke-git/lancet/v2/fileutil"
 	Prompt "github.com/flipped-aurora/gin-vue-admin/server/model/Promt"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
@@ -14,7 +15,20 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 )
 
-func Chatmain(Prompt Prompt.Promt, title string) {
+func TestChatMain(Prompt Prompt.Promt, title chan string, filename string) {
+	for {
+		title1, ok := <-title
+		if !ok {
+			fmt.Println("通道已关闭，退出循环")
+			break
+		}
+		fmt.Println("title:", title1)
+		fmt.Println("filename:", filename)
+		fmt.Println("Prompt:", Prompt.PromtData)
+	}
+}
+
+func Chatmain(Prompt Prompt.Promt, title chan string, filename string) {
 	// azureOpenAIKey := os.Getenv("AZURE_OPENAI_API_KEY")
 	// modelDeploymentID := os.Getenv("YOUR_MODEL_DEPLOYMENT_NAME")
 	azureOpenAIKey := "75189fda8719425dbbc5947d59d661e7"
@@ -37,15 +51,30 @@ func Chatmain(Prompt Prompt.Promt, title string) {
 	}
 
 	prompts, err := PromptJsonArrayToStringSlice(Prompt.PromtData)
+	// title1 := <-title
+	// article := generateArticle(title1, client, modelDeploymentID, maxTokens, prompts)
+	// var articles []string
+	// for _, arti := range article {
+	// 	articles = append(articles, ReplaceString(arti))
 
-	article := generateArticle(title, client, modelDeploymentID, maxTokens, prompts)
-	var articles []string
-	for _, arti := range article {
-		articles = append(articles, ReplaceString(arti))
+	// }
+	// // 保存文章到本地markdown文件
+	// saveArticle(title1, articles)
+	for {
+		title1, ok := <-title
+		if !ok {
+			fmt.Println("通道已关闭，退出循环")
+			break
+		}
+		article := generateArticle(title1, client, modelDeploymentID, maxTokens, prompts)
+		var articles []string
+		for _, arti := range article {
+			articles = append(articles, ReplaceString(arti))
+		}
+		// 保存文章到本地markdown文件
+		saveArticle(filename+"/"+title1, articles)
 
 	}
-	// 保存文章到本地markdown文件
-	saveArticle(title, articles)
 }
 
 func generateArticle(title string, client *azopenai.Client, modelDeploymentID string, maxTokens int32, prompts []string) []string {
@@ -112,6 +141,7 @@ func getCompletion(title string, client *azopenai.Client, modelDeploymentID stri
 func saveArticle(title string, articles []string) {
 	// 保存文章到本地markdown文件
 	filename := fmt.Sprintf("%s.md", title)
+	fileutil.CreateFile(filename + "/" + title)
 	f, err := os.Create(filename)
 	if err != nil {
 		log.Printf("创建文件时出错: %s", err)
@@ -120,8 +150,10 @@ func saveArticle(title string, articles []string) {
 	defer f.Close()
 
 	for _, article := range articles {
-		_, err = f.WriteString(fmt.Sprintf("%s\n", article))
+		// _, err = f.WriteString(fmt.Sprintf("%s\n", article))
 		// fmt.Println(article)
+
+		fileutil.WriteStringToFile(filename+"/"+title, article, true)
 		if err != nil {
 			log.Printf("写入文件时出错: %s", err)
 			return

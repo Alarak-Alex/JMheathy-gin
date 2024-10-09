@@ -7,6 +7,7 @@ import (
 	"github.com/flipped-aurora/gin-vue-admin/server/model/common/response"
 	"github.com/flipped-aurora/gin-vue-admin/server/utils"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
@@ -31,6 +32,7 @@ func (ProjectsApi *SystemProjectApi) CreateSystemProject(c *gin.Context) {
 	ID := int(utils.GetUserID(c))
 	Projects.SystemUserId = &ID
 	Projects.CreatedBy = utils.GetUserID(c)
+	Projects.PUUID = uuid.New().String()
 	err = ProjectsService.CreateSystemProject(&Projects)
 	if err != nil {
 		global.GVA_LOG.Error("创建失败!", zap.Error(err))

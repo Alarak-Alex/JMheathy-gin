@@ -15,7 +15,7 @@ type SystemProject struct {
 	CookieType   string         `json:"cookieType" form:"cookieType" gorm:"index;column:cookie_type;comment:cookie类型;size:255;" binding:"required"`                              //cookie类型
 	SystemUserId *int           `json:"systemUserId" form:"systemUserId" gorm:"index;column:system_user_id;comment:管理用户ID;size:8;" binding:"required"`                           //管理用户ID
 	Status       string         `json:"status" form:"status" gorm:"index;default:5;column:status;comment:状态;size:8;" binding:"required"`                                         //状态
-	PUUID        string         `json:"pUUID" form:"pUUID" gorm:"index;column:p_uuid;comment:项目UUID;size:255;" binding:"required"`                                               //项目UUID
+	PUUID        string         `json:"pUUID" form:"pUUID" gorm:"index;column:p_uuid;comment:项目UUID;size:255;"`                                                                  //项目UUID
 	CreatedBy    uint           `gorm:"column:created_by;comment:创建者"`
 	UpdatedBy    uint           `gorm:"column:updated_by;comment:更新者"`
 	DeletedBy    uint           `gorm:"column:deleted_by;comment:删除者"`

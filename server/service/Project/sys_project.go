@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
-	"github.com/duke-git/lancet/v2/convertor"
 	"github.com/duke-git/lancet/v2/fileutil"
 	"github.com/duke-git/lancet/v2/system"
 	"github.com/flipped-aurora/gin-vue-admin/server/global"
@@ -183,17 +183,32 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 	}
 
 	// 转换标题列表
+	fmt.Println(project.TitleList)
 	titles, err := UserUtils.JsonArrayToStringSlice(project.TitleList)
 	if err != nil {
 		return fmt.Errorf("转换json数组失败: %w", err)
 	}
+	// 初始化通道
+	Titlechan := make(chan string)
 
-	for i, title := range titles {
-		// 写入标题的数量
-		titleNum := i + 1
-		num := convertor.ToString(titleNum)
-		fmt.Println("写入第" + num + "个标题," + title)
-		go UserUtils.Chatmain(prompt, title)
+	// 发送标题到通道
+	go func() {
+		for _, title := range titles {
+			Titlechan <- title
+		}
+		close(Titlechan)
+	}()
+
+	// CHAN 通道
+	fmt.Println("通道已创建")
+
+	// 根据系统的 CPU 核心数开启多个协程
+	numGoroutines := runtime.NumCPU()
+	maxGoroutines := len(titles) // 可以用 titles 长度作为最大并发数
+
+	for i := 0; i < numGoroutines && i < maxGoroutines; i++ {
+		fmt.Println("开启协程", i)
+		go UserUtils.Chatmain(prompt, Titlechan, createPath)
 	}
 
 	// 生成文档名称
