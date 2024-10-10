@@ -2,113 +2,275 @@ package article
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
+	"strings"
+
+	"github.com/duke-git/lancet/strutil"
+	"github.com/duke-git/lancet/system"
+	"github.com/duke-git/lancet/v2/fileutil"
+	"github.com/duke-git/lancet/v2/slice"
+	Prompt "github.com/flipped-aurora/gin-vue-admin/server/model/Promt"
+	"gorm.io/datatypes"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/ai/azopenai"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 )
 
-type ModelDeployment struct {
-	AzureOpenAIKey      string
-	AzureOpenAIEndpoint string
-	DeploymentName      string
+func TestChatMain(Prompt Prompt.Promt, title chan string, filename string) {
+	for {
+		title1, ok := <-title
+		if !ok {
+			fmt.Println("通道已关闭，退出循环")
+			break
+		}
+		fmt.Println("title:", title1)
+		fmt.Println("filename:", filename)
+		fmt.Println("Prompt:", Prompt.PromtData)
+	}
 }
 
-type Prompt struct {
-	InsidePrompt    string
-	JsonPromptArrry []string
-}
-
-func WriteWordArticle(AiConfig ModelDeployment, prompt Prompt) {
-	azureOpenAIKey := AiConfig.AzureOpenAIKey
-	modelDeploymentID := AiConfig.DeploymentName
+func Chatmain(Prompt Prompt.Promt, title chan string, filePath string) {
+	// azureOpenAIKey := os.Getenv("AZURE_OPENAI_API_KEY")
+	// modelDeploymentID := os.Getenv("YOUR_MODEL_DEPLOYMENT_NAME")
+	azureOpenAIKey := "75189fda8719425dbbc5947d59d661e7"
+	modelDeploymentID := "gpt-4o-mini"
 	maxTokens := int32(4000)
 
-	// Ex: "https://<your-azure-openai-host>.openai.azure.com"
-	azureOpenAIEndpoint := AiConfig.AzureOpenAIEndpoint
-
+	// azureOpenAIEndpoint := os.Getenv("AZURE_OPENAI_ENDPOINT")
+	azureOpenAIEndpoint := "https://jmheathyswedencentral.openai.azure.com"
 	if azureOpenAIKey == "" || modelDeploymentID == "" || azureOpenAIEndpoint == "" {
-		fmt.Fprintf(os.Stderr, "写文启动失败，请检查配置信息是否正确。\n")
+		fmt.Fprintf(os.Stderr, "跳过示例，环境变量缺失\n")
 		return
 	}
 
 	keyCredential := azcore.NewKeyCredential(azureOpenAIKey)
 
-	// In Azure OpenAI you must deploy a model before you can use it in your client. For more information
-	// see here: https://learn.microsoft.com/azure/cognitive-services/openai/how-to/create-resource
 	client, err := azopenai.NewClientWithKeyCredential(azureOpenAIEndpoint, keyCredential, nil)
-
 	if err != nil {
-		// TODO: Update the following line with your application specific error handling logic
-		log.Printf("ERROR: %s", err)
+		log.Printf("错误: %s", err)
 		return
 	}
 
-	// This is a conversation in progress.
-	// NOTE: all messages, regardless of role, count against token usage for this API.
-	messages := []azopenai.ChatRequestMessageClassification{
-		// 设置系统内置角色
-		&azopenai.ChatRequestSystemMessage{Content: to.Ptr("你好，欢迎使用 Azure OpenAI 聊天机器人。")},
+	prompts, err := PromptJsonArrayToStringSlice(Prompt.PromtData)
+	// title1 := <-title
+	// article := generateArticle(title1, client, modelDeploymentID, maxTokens, prompts)
+	// var articles []string
+	// for _, arti := range article {
+	// 	articles = append(articles, ReplaceString(arti))
 
-		// The user asks a question
-		&azopenai.ChatRequestUserMessage{Content: azopenai.NewChatRequestUserMessageContent("Does Azure OpenAI support customer managed keys?")},
+	// }
+	// // 保存文章到本地markdown文件
+	// saveArticle(title1, articles)
+	for {
+		title1, ok := <-title
+		if !ok {
+			// fmt.Println("通道已关闭，退出循环")
+			break
+		}
+		article := generateArticle(title1, client, modelDeploymentID, maxTokens, prompts)
+		var articles []string
+		for _, arti := range article {
+			articles = append(articles, ReplaceString(arti))
+		}
+		// 保存文章到本地markdown文件
+		saveArticle(filePath, articles, title1)
 
-		// The reply would come back from the model. You'd add it to the conversation so we can maintain context.
-		&azopenai.ChatRequestAssistantMessage{Content: to.Ptr("Yes, customer managed keys are supported by Azure OpenAI")},
+	}
+}
 
-		// The user answers the question based on the latest reply.
-		&azopenai.ChatRequestUserMessage{Content: azopenai.NewChatRequestUserMessageContent("What other Azure Services support customer managed keys?")},
+func generateArticle(title string, client *azopenai.Client, modelDeploymentID string, maxTokens int32, prompts []string) []string {
+	var article []string
+	var historyMessages []azopenai.ChatRequestMessageClassification // 用于保存历史消息
 
-		// from here you'd keep iterating, sending responses back from ChatGPT
+	for _, prompt := range prompts {
+		flag := strings.Split(prompt, ":")[0]
+		data := strings.Split(prompt, ":")[1]
+		if flag != "part" {
+			data = "\n" + data + "\n"
+			article = append(article, data)
+		} else {
+			part := generatePart(title, client, modelDeploymentID, maxTokens, data, historyMessages)
+			article = append(article, part)
+			// fmt.Println("生成的部分为：", part)
+			// 记录生成的部分作为历史消息
+			historyMessages = append(historyMessages, &azopenai.ChatRequestAssistantMessage{Content: to.Ptr(part)})
+		}
 	}
 
-	gotReply := false
+	return article
+}
+
+func generatePart(title string, client *azopenai.Client, modelDeploymentID string, maxTokens int32, prompt string, historyMessages []azopenai.ChatRequestMessageClassification) string {
+	// fmt.Printf("generatePart函数接受的提示词为：%s\n", prompt)
+
+	// 合并上下文和当前提示
+	answer, _ := getCompletion(title, client, modelDeploymentID, prompt, maxTokens, historyMessages)
+	return answer
+}
+
+func getCompletion(title string, client *azopenai.Client, modelDeploymentID string, prompt string, maxTokens int32, historyMessages []azopenai.ChatRequestMessageClassification) (string, []azopenai.ChatRequestMessageClassification) {
+
+	origionalPrompt := fmt.Sprintf("你是一位擅长写文章的健康科普专栏医生，你会以医生的视角看待问题。并且会用简明易懂的语言生成引人入胜的科普小文章，要求第三人称，以患者为主体，标题为：%s,不要在文中生成标题", title)
+
+	// 将历史消息加入到消息列表中
+	messages := append(historyMessages, &azopenai.ChatRequestSystemMessage{Content: to.Ptr(origionalPrompt)},
+		&azopenai.ChatRequestUserMessage{Content: azopenai.NewChatRequestUserMessageContent(prompt)})
+
+	temperature := float32(0.7)
 
 	resp, err := client.GetChatCompletions(context.TODO(), azopenai.ChatCompletionsOptions{
-		// This is a conversation in progress.
-		// NOTE: all messages count against token usage for this API.
 		Messages:       messages,
 		DeploymentName: &modelDeploymentID,
 		MaxTokens:      &maxTokens,
+		Temperature:    &temperature,
 	}, nil)
 
 	if err != nil {
-		// TODO: Update the following line with your application specific error handling logic
-		log.Printf("ERROR: %s", err)
-		return
+		log.Printf("错误: %s", err)
+		return "", messages
 	}
 
 	for _, choice := range resp.Choices {
-		gotReply = true
-
-		if choice.ContentFilterResults != nil {
-			fmt.Fprintf(os.Stderr, "Content filter results\n")
-
-			if choice.ContentFilterResults.Error != nil {
-				fmt.Fprintf(os.Stderr, "  Error:%v\n", choice.ContentFilterResults.Error)
-			}
-
-			fmt.Fprintf(os.Stderr, "  Hate: sev: %v, filtered: %v\n", *choice.ContentFilterResults.Hate.Severity, *choice.ContentFilterResults.Hate.Filtered)
-			fmt.Fprintf(os.Stderr, "  SelfHarm: sev: %v, filtered: %v\n", *choice.ContentFilterResults.SelfHarm.Severity, *choice.ContentFilterResults.SelfHarm.Filtered)
-			fmt.Fprintf(os.Stderr, "  Sexual: sev: %v, filtered: %v\n", *choice.ContentFilterResults.Sexual.Severity, *choice.ContentFilterResults.Sexual.Filtered)
-			fmt.Fprintf(os.Stderr, "  Violence: sev: %v, filtered: %v\n", *choice.ContentFilterResults.Violence.Severity, *choice.ContentFilterResults.Violence.Filtered)
-		}
-
 		if choice.Message != nil && choice.Message.Content != nil {
-			fmt.Fprintf(os.Stderr, "Content[%d]: %s\n", *choice.Index, *choice.Message.Content)
-		}
-
-		if choice.FinishReason != nil {
-			// this choice's conversation is complete.
-			fmt.Fprintf(os.Stderr, "Finish reason[%d]: %s\n", *choice.Index, *choice.FinishReason)
+			return *choice.Message.Content, messages
 		}
 	}
 
-	if gotReply {
-		fmt.Fprintf(os.Stderr, "Received chat completions reply\n")
+	return "", messages
+}
+
+func saveArticle(Path string, articles []string, title string) {
+	// 保存文章到本地markdown文件
+
+	// 生成文档名称
+	part1 := title + "_part1"
+	part2 := title + "_part2"
+	filepart1 := fmt.Sprintf("%s.md", part1)
+	filepart2 := fmt.Sprintf("%s.md", part2)
+	fileutil.CreateFile(Path + "/" + filepart1)
+	fileutil.CreateFile(Path + "/" + filepart2)
+
+	f1, err := os.OpenFile(Path+"/"+filepart1, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Printf("错误: %s", err)
+		return
+	}
+	f2, err := os.OpenFile(Path+"/"+filepart2, os.O_APPEND|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Printf("错误: %s", err)
+		return
 	}
 
+	var cutindex int
+
+	for index, str := range articles {
+		if strutil.ContainsAll(str, []string{"---文章分割线---"}) {
+			cutindex = index + 1
+			break
+		}
+	}
+
+	deleterange := len(articles) - cutindex + 1
+
+	var part1Content []string
+	var part2Content []string
+
+	part1Content = slice.DropRight(articles, deleterange)
+	part2Content = slice.DeleteRange(articles, 0, cutindex)
+	// 写入part1内容
+	for _, part1 := range part1Content {
+		_, err = f1.WriteString(part1 + "\n")
+		if err != nil {
+			log.Printf("错误: %s", err)
+			return
+		}
+	}
+
+	// 写入part2内容
+	for _, part2 := range part2Content {
+		_, err = f2.WriteString(part2 + "\n")
+		if err != nil {
+			log.Printf("错误: %s", err)
+			return
+		}
+	}
+
+	f1.Close()
+	f2.Close()
+
+	base1 := Path + "/" + filepart1
+	base2 := Path + "/" + filepart2
+	docx1 := strings.Split(base1, ".")[0] + ".docx"
+	docx2 := strings.Split(base2, ".")[0] + ".docx"
+
+	// 打印Pandoc版本信息
+	command1 := "pandoc " + base1 + " -f markdown -t docx -s -o " + docx1
+	command2 := "pandoc " + base2 + " -f markdown -t docx -s -o " + docx2
+	_, _, err = system.ExecCommand(command1)
+	if err != nil {
+		fmt.Errorf("执行命令失败: %w", err)
+	}
+	// fmt.Println("std out: ", stdout)
+	// fmt.Println("std err: ", stderr)
+	fileutil.RemoveFile(base1)
+	_, _, err = system.ExecCommand(command2)
+	if err != nil {
+		fmt.Errorf("执行命令失败: %w", err)
+	}
+	// fmt.Println("std out: ", stdout, fileutil.CurrentPath())
+	// fmt.Println("std err: ", stderr)
+	fileutil.RemoveFile(base2)
+}
+
+func ReplaceString(s string) string {
+
+	replaces := map[string]string{
+		// "**": "***",
+		"党":  "",
+		"国家": "",
+		"台湾": "",
+	}
+
+	return strutil.ReplaceWithMap(s, replaces)
+}
+
+// ParseJsonArray 解析 JSON 数组到指定切片
+func ParseJsonArray(pd datatypes.JSON, result interface{}) error {
+	if err := json.Unmarshal(pd, result); err != nil {
+		return fmt.Errorf("解析 JSON 时出错: %w", err)
+	}
+	return nil
+}
+
+// JsonArrayToStringSlice 将 JSON 数组转换为字符串切片
+func JsonArrayToStringSlice(pd datatypes.JSON) ([]string, error) {
+	var data [][]string
+	if err := ParseJsonArray(pd, &data); err != nil {
+		return nil, err
+	}
+
+	// 初始化 titles 切片
+	titles := make([]string, len(data))
+	for i, item := range data {
+		if len(item) > 0 {
+			titles[i] = item[0]
+		}
+	}
+
+	// 使用切片的实际长度
+	return titles[:len(data)], nil
+}
+
+// PromptJsonArrayToStringSlice 将 JSON 数组直接转换为字符串切片
+func PromptJsonArrayToStringSlice(pd datatypes.JSON) ([]string, error) {
+	var result []string
+	if err := ParseJsonArray(pd, &result); err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }

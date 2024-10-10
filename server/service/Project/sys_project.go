@@ -17,6 +17,7 @@ import (
 	ProjectReq "github.com/flipped-aurora/gin-vue-admin/server/model/Project/request"
 	Prompt "github.com/flipped-aurora/gin-vue-admin/server/model/Promt"
 	UserUtils "github.com/flipped-aurora/gin-vue-admin/server/utils"
+	article "github.com/flipped-aurora/gin-vue-admin/server/utils/article"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -183,7 +184,7 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 		}
 	}
 
-	titles, err := UserUtils.JsonArrayToStringSlice(project.TitleList)
+	titles, err := article.JsonArrayToStringSlice(project.TitleList)
 	if err != nil {
 		return fmt.Errorf("转换json数组失败: %w", err)
 	}
@@ -209,7 +210,7 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 			defer func() { <-sem }() // 释放信号量
 
 			// 此处写入错误处理
-			UserUtils.Chatmain(prompt, Titlechan, createPath)
+			article.Chatmain(prompt, Titlechan, createPath)
 		}(title)
 	}
 
@@ -224,6 +225,7 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 
 // PublishArticle 发布文章
 // Author [AlarakStark](https://github.com/AlarakStark)
+// 根据项目ID获取项目实例，通过信息查询Cookie和UUID(获取文章)
 func (ProjectsService *SystemProjectService) PublishArticle(ID string) (err error) {
 	var Projects Project.SystemProject
 	var Cookies []Cookie.Cookie
@@ -238,7 +240,7 @@ func (ProjectsService *SystemProjectService) PublishArticle(ID string) (err erro
 		cookiestream <- cookie.UserCookie
 		fmt.Println(cookie.CookieName)
 	}
-	fmt.Println(<-cookiestream)
+	// fmt.Println(<-cookiestream)
 
 	return err
 }
