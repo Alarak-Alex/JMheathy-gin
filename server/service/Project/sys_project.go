@@ -17,7 +17,7 @@ import (
 	ProjectReq "github.com/flipped-aurora/gin-vue-admin/server/model/Project/request"
 	Prompt "github.com/flipped-aurora/gin-vue-admin/server/model/Promt"
 	UserUtils "github.com/flipped-aurora/gin-vue-admin/server/utils"
-	article "github.com/flipped-aurora/gin-vue-admin/server/utils/article"
+	Article "github.com/flipped-aurora/gin-vue-admin/server/utils/article"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 	"gorm.io/datatypes"
@@ -184,7 +184,7 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 		}
 	}
 
-	titles, err := article.JsonArrayToStringSlice(project.TitleList)
+	titles, err := Article.JsonArrayToStringSlice(project.TitleList)
 	if err != nil {
 		return fmt.Errorf("转换json数组失败: %w", err)
 	}
@@ -210,7 +210,7 @@ func (ProjectsService *SystemProjectService) WriteWord(ID string, c *gin.Context
 			defer func() { <-sem }() // 释放信号量
 
 			// 此处写入错误处理
-			article.Chatmain(prompt, Titlechan, createPath)
+			Article.Chatmain(prompt, Titlechan, createPath)
 		}(title)
 	}
 
